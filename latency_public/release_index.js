@@ -81,7 +81,7 @@ setInterval(function()
   }
   if(keyS) 
   {
-    v_x = -0.9
+    v_x = -0.5
   }
   if(keyA) 
   {
@@ -89,7 +89,7 @@ setInterval(function()
   }
   if(keyW) 
   {
-    v_x = 0.9
+    v_x = 0.5
   }
   if(keyQ) 
   {
