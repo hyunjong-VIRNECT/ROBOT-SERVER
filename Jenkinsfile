@@ -8,7 +8,7 @@ pipeline {
         branch 'master'
       }
       steps {
-          sh 'docker build -t rm-robot-server --build-arg NODE_ENV=develop -f docker/Dockerfile .'
+          sh 'docker build -t rm-robot-server -f docker/Dockerfile .'
       }
     }
     stage('Deploy') {

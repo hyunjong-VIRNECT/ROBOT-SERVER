@@ -6,6 +6,11 @@ const port = process.env.PORT || 3458;
 
 app.use(express.static(__dirname + '/latency_public'));
 
+app.get('/healthcheck', (req,res) => {
+  res.header('Content-Type', 'application/json')
+  res.send(200)
+})
+
 //client_id
 var clients = [];
 var clientInfo
