@@ -6,7 +6,7 @@ COPY . .
 ARG NODE_ENV=production
 
 RUN npm install express
-RUN npm install socket.io
+RUN npm install socket.io@2.3.0
 
 # Runtime Stage
 FROM node:12-alpine
