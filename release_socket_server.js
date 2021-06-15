@@ -1,6 +1,13 @@
 const express = require('express');
+const fs = require('fs');
+const options = {
+  key : fs.readFileSync(__dirname + '/ssl/virnect.key'),
+  cert : fs.readFileSync(__dirname + '/ssl/virnect.crt')
+}
 const app = express();
-const server = require('http').createServer(app);
+const server = require('https').createServer(options ,app);
+// const server = require('http').createServer(app);
+
 const io = require('socket.io')(server);
 const port = process.env.PORT || 3458;
 
@@ -133,11 +140,6 @@ io.sockets.on('connection', function(socket)
   {
     // data.battery : battery , data.Estop : estop_state , data.Power : power_state
     io.to(web_client_id).emit('running_state', data)
-
-    if(parseInt(data.battery) < 15)
-    {
-      io.to(web_client_id).emit('low_battery')
-    }
   });
 
   //spot control
