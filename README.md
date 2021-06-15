@@ -11,7 +11,7 @@ rlaghdud3@virnect.com
 ```
 1. npm init
 2. npm install express
-2. npm install socket.io
+3. npm install socket.io@2.3.0
 ```
 
 ## Environment
