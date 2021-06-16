@@ -21,8 +21,14 @@ const Eureka_client = new Eureka({
           // 서버 포트
           '$': PORT_Eureka_App,
           // 서버 포트 사용 활성화
-          '@enabled': true,
+          '@enabled': false,
       },
+      securePort: {
+        // 서버 포트
+        '$': PORT_Eureka_App,
+        // https 서버 포트 사용 활성화
+        '@enabled': true,
+    },
       dataCenterInfo: {
           '@class': 'com.netflix.appinfo.InstanceInfo$DefaultDataCenterInfo',
           name: 'MyOwn',
