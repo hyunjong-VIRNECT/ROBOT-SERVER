@@ -1,8 +1,8 @@
 <!doctype html>
 <html>
   <head>
+      <link rel="stylesheet" href="/assets/slider.styles.min.css" />
   </head>
-
   <body>
     <h1>Spot Control <span id="latency"></span></h1>
       <canvas id="camera_stream_front_R" width="480" height="640" style="border: 1px solid black" ></canvas> 
@@ -11,7 +11,12 @@
       <canvas id="camera_stream_left"   width="640" height="480" style="border: 1px solid black" ></canvas>
       <canvas id="camera_stream_right"  width="640" height="480" style="border: 1px solid black" ></canvas>
     </div>
+    <div>
       <canvas id="camera_stream_back" width="640" height="480" style="border: 1px solid black" ></canvas>
+      <input id="yaw_slider" type="range"> yaw
+      <input id="roll_slider" type="range" > roll
+      <input id="pitch_slider" type="range" > pitch
+    </div>
   </body>
 
   <div>
@@ -38,4 +43,5 @@
 
   <script src="socket.io.js"></script>
   <script src="/release_index.js"></script>
+  <script src="/assets/rangeslider-js/dist/rangeslider-js.min.js"></script>
 </html>

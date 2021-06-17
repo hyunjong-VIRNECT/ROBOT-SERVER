@@ -62,6 +62,7 @@ const io = require('socket.io')(server);
 const port = process.env.PORT || 3458;
 
 app.use(express.static(__dirname + '/latency_public'));
+app.use('/assets', express.static(__dirname + '/assets'))
 
 app.get('/healthcheck', (req,res) => {
   res.header('Content-Type', 'application/json')
@@ -184,6 +185,10 @@ io.sockets.on('connection', function(socket)
 
   socket.on('spot_drive_cmd', function(data){
     io.to(spot_control_client_id).emit('spot_control_cmd', data)
+  });
+
+  socket.on('spot_pose_cmd', function(data){
+    io.to(spot_control_client_id).emit('spot_pose_cmd', data)
   });
 
   socket.on('spot_running_state', function(data)

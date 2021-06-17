@@ -65,7 +65,8 @@ function onKeyUp(event)
 }
  
 var v_x=0.0, v_y=0.0, v_rot=0.0
- 
+var yaw=0.0, roll=0.0, pitch=0.0
+
 var keyW = false;
 var keyA = false;
 var keyS = false;
@@ -184,6 +185,44 @@ var btn_power_off      = document.getElementById('btn_spot_control_power_off')
 var btn_sit            = document.getElementById('btn_spot_control_sit')
 var btn_stand          = document.getElementById('btn_spot_control_stand')
 
+var yaw_slider = document.getElementById('yaw_slider');
+var roll_slider = document.getElementById('roll_slider');
+var pitch_slider = document.getElementById('pitch_slider');
+
+rangesliderJs.create(yaw_slider, {
+  min: -0.5, 
+  max: 0.5, 
+  value: 0.0, 
+  step: 0.05,
+  onSlideEnd: (value, percent, position) => {
+    yaw = value
+    socket.emit('spot_pose_cmd', [yaw, roll, pitch])
+  }
+});
+
+rangesliderJs.create(roll_slider, {
+  min: -0.5, 
+  max: 0.5, 
+  value: 0.0, 
+  step: 0.05,
+  onSlideEnd: (value, percent, position) => {
+    roll = value
+    socket.emit('spot_pose_cmd', [yaw, roll, pitch])
+  }
+});
+
+rangesliderJs.create(pitch_slider, {
+  min: -0.5, 
+  max: 0.5, 
+  value: 0.0, 
+  step: 0.05,
+  onSlideEnd: (value, percent, position) => {
+    pitch = value
+    socket.emit('spot_pose_cmd', [yaw, roll, pitch])
+  }
+});
+
+
 //spot camera image resource
 var camera_resource_front_R = new Image(); 
 var camera_resource_front_L = new Image();
@@ -235,9 +274,6 @@ socket.on('running_state', function(data){
   }
 });
 
-socket.on('low_battery', () => {
-  window.alert("배터리 15% 미만 , 배터리 잔량 확인 필요")
-})
 
 //receive error message
 socket.on('spot_error_message', (data) =>
@@ -268,7 +304,7 @@ socket.on('spot_camera_right', (data) =>
 
 socket.on('spot_camera_back', (data) => 
 {
-  camera_resource_back.src = "data:image/jpg;base64," + data;
+  camera_resource_back.src = "data:image/png;base64," + data;
 });
 
 //camera_canvas_onload
