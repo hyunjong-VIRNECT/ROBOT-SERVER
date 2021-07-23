@@ -254,6 +254,10 @@ io.sockets.on('connection', function(socket)
   {
     socket.to(web_client_id).emit('spot_error_message', data);
   });
+
+  socket.on('button_test', (data) => {
+    //console.log()
+  });
 });
 
 server.listen(port, () => {
