@@ -176,14 +176,19 @@ function spot_control_power_off()
   socket.emit('spot_control_power_off');
 };
 
+function socket_test(){
+  //socket.emit('button_test', btn_test);
+};
+
 //element
-var input_text_error   = document.getElementById("text_spot_error_message")
+var input_text_error = document.getElementById("text_spot_error_message")
 var input_text_battery = document.getElementById("text_battery")
-var btn_estop          = document.getElementById('btn_spot_control_estop')
-var btn_power_on       = document.getElementById('btn_spot_control_power_on')
-var btn_power_off      = document.getElementById('btn_spot_control_power_off')
-var btn_sit            = document.getElementById('btn_spot_control_sit')
-var btn_stand          = document.getElementById('btn_spot_control_stand')
+var btn_estop = document.getElementById('btn_spot_control_estop')
+var btn_power_on = document.getElementById('btn_spot_control_power_on')
+var btn_power_off = document.getElementById('btn_spot_control_power_off')
+var btn_sit = document.getElementById('btn_spot_control_sit')
+var btn_stand = document.getElementById('btn_spot_control_stand')
+var btn_test = document.getElementById("btn_socket_test")
 
 var yaw_slider = document.getElementById('yaw_slider');
 var roll_slider = document.getElementById('roll_slider');
