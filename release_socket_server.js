@@ -51,12 +51,12 @@ const Eureka_client = new Eureka({
 //socket server
 const express = require('express');
 const fs = require('fs');
-const options = {
+const options = { 
   key : fs.readFileSync(__dirname + '/ssl/virnect.key'),
   cert : fs.readFileSync(__dirname + '/ssl/virnect.crt')
 }
 const app = express();
-const server = require('https').createServer(options ,app);
+const server = require('https').createServer(options, app);
 
 const io = require('socket.io')(server);
 const port = process.env.PORT || 3458;
@@ -200,64 +200,74 @@ io.sockets.on('connection', function(socket)
   //spot control
   socket.on('spot_control_estop', () => 
   {
-    socket.to(spot_control_client_id).emit('spot_control_estop')
+    io.to(spot_control_client_id).emit('spot_control_estop')
   });
 
   socket.on('spot_control_power_on', () => 
   {
-    socket.to(spot_control_client_id).emit('spot_control_power_on')
+    io.to(spot_control_client_id).emit('spot_control_power_on')
   });
 
   socket.on('spot_control_sit', () => 
   {
-    socket.to(spot_control_client_id).emit('spot_control_sit')
+    io.to(spot_control_client_id).emit('spot_control_sit')
   });
 
   socket.on('spot_control_stand', () => 
   {
-    socket.to(spot_control_client_id).emit('spot_control_stand')
+    io.to(spot_control_client_id).emit('spot_control_stand')
   });
 
   socket.on('spot_control_power_off', () => 
   {
-    socket.to(spot_control_client_id).emit('spot_control_power_off')
+    io.to(spot_control_client_id).emit('spot_control_power_off')
   });
 
-  //spot camera img stream
+  // spot id = socket.id 일때만 이미지 받는 방식으로 수정
   socket.on('frontright_fisheye_image', (data) => 
   {
-    socket.to(web_client_id).emit('spot_camera_front_R', data);
+    if(socket.id == spot_control_client_id)
+      io.to(web_client_id).emit('spot_camera_front_R', data);
   });
 
   socket.on('frontleft_fisheye_image', (data) => 
   {
-    socket.to(web_client_id).emit('spot_camera_front_L', data);
+    if(socket.id == spot_control_client_id)
+      io.to(web_client_id).emit('spot_camera_front_L', data);
   });
 
   socket.on('left_fisheye_image', (data) => 
   {
-    socket.to(web_client_id).emit('spot_camera_left', data);
+    if(socket.id == spot_control_client_id)
+      io.to(web_client_id).emit('spot_camera_left', data);
   });
 
   socket.on('right_fisheye_image', (data) => 
   {
-    socket.to(web_client_id).emit('spot_camera_right', data);
+    if(socket.id == spot_control_client_id)
+      io.to(web_client_id).emit('spot_camera_right', data);
   });
 
   socket.on('back_fisheye_image', (data) => 
   {
-    socket.to(web_client_id).emit('spot_camera_back', data);
+    if(socket.id == spot_control_client_id)
+      io.to(web_client_id).emit('spot_camera_back', data);
   });
 
   //spot error message
   socket.on('spot_error_message', (data) => 
   {
-    socket.to(web_client_id).emit('spot_error_message', data);
+    io.to(web_client_id).emit('spot_error_message', data);
   });
 
   socket.on('button_test', (data) => {
     //console.log()
   });
+
+  socket.on('start_autowalk', (data) =>{ // data : path to .autowalk file
+    io.to(spot_control_client_id).emit('start_autowalk', data);
+  });
+
 });
 
 server.listen(port, () => {
