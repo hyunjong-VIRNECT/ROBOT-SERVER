@@ -11,6 +11,22 @@ var spot_control_keycode =
 
 window.addEventListener("keydown", onKeyDown, false);
 window.addEventListener("keyup", onKeyUp, false);
+
+//element
+var input_text_error = document.getElementById("text_spot_error_message")
+var input_text_battery = document.getElementById("text_battery")
+var btn_estop = document.getElementById('btn_spot_control_estop')
+var btn_power_on = document.getElementById('btn_spot_control_power_on')
+var btn_power_off = document.getElementById('btn_spot_control_power_off')
+var btn_sit = document.getElementById('btn_spot_control_sit')
+var btn_stand = document.getElementById('btn_spot_control_stand')
+var btn_autowalk = document.getElementById('btn_spot_autowalk_list')
+var btn_viewmap = document.getElementById('btn_spot_load_map')
+
+var yaw_slider = document.getElementById('yaw_slider');
+var roll_slider = document.getElementById('roll_slider');
+var pitch_slider = document.getElementById('pitch_slider');
+
  
 function onKeyDown(event) 
 {
@@ -113,7 +129,7 @@ setInterval(function()
 var motor_power, estop_state
 
 //socket
-const socket = io({transports: ['websocket'], upgrade: false}).connect('http://localhost:3458');
+const socket = io({transports: ['websocket'], upgrade: false}).connect('https://localhost:3458');
 
 //사용자 구분(socket client info object)
 const client_info = new Object()
@@ -171,28 +187,42 @@ function spot_control_stand()
   socket.emit('spot_control_stand');
 };
 
-function spot_control_power_off()
-{
+function spot_control_power_off(){
   socket.emit('spot_control_power_off');
 };
 
-function socket_test(){
-  //socket.emit('button_test', btn_test);
-};
+function get_autowalk_list(){
+  socket.emit('get_autowalk_list')
+}
 
-//element
-var input_text_error = document.getElementById("text_spot_error_message")
-var input_text_battery = document.getElementById("text_battery")
-var btn_estop = document.getElementById('btn_spot_control_estop')
-var btn_power_on = document.getElementById('btn_spot_control_power_on')
-var btn_power_off = document.getElementById('btn_spot_control_power_off')
-var btn_sit = document.getElementById('btn_spot_control_sit')
-var btn_stand = document.getElementById('btn_spot_control_stand')
-var btn_test = document.getElementById("btn_socket_test")
+function setup(data){
+  for (var cnt=0; cnt<data.length; cnt++){
+    var option = $("<option>"+data[cnt]+"</option>");
+    $('#autowalk_list').append(option)
+  }
+}
 
-var yaw_slider = document.getElementById('yaw_slider');
-var roll_slider = document.getElementById('roll_slider');
-var pitch_slider = document.getElementById('pitch_slider');
+function spot_led_on(){
+  socket.emit('set_led', 'test')
+}
+
+
+function call(){
+  let autowalk = $("#autowalk_list").val()
+  console.log(autowalk)
+  btn_viewmap.disabled= false
+}
+
+function startAutowalk(data){
+  socket.emit('start_autowalk', data)
+}
+
+function load_autowalk_map(){
+  let autowalk = $("#autowalk_list").val()
+  socket.emit('view_autowalk_map', autowalk)
+  const url = 'https://192.168.6.3:3458/gltf_viewer_test.html'
+  window.open(url)
+}
 
 rangesliderJs.create(yaw_slider, {
   min: -0.5, 
@@ -244,7 +274,6 @@ var camera_canvas_back    = document.getElementById("camera_stream_back").getCon
 
 socket.on('running_state', function(data){
   // data.battery : battery , data.estop : ESTOP , data.power : power_state
-  
   battery_state = data.battery
   estop_state   = data.estop
   motor_power   = data.power
@@ -279,7 +308,6 @@ socket.on('running_state', function(data){
   }
 });
 
-
 //receive error message
 socket.on('spot_error_message', (data) =>
 {
@@ -310,6 +338,15 @@ socket.on('spot_camera_right', (data) =>
 socket.on('spot_camera_back', (data) => 
 {
   camera_resource_back.src = "data:image/png;base64," + data;
+});
+
+socket.on('spot_autowalk_list', (data) => {
+  setup(data)
+});
+
+socket.on('spot_replay_mission_result', (data) => {
+  let autowalk = $("#autowalk_list").val()
+  window.alert(autowalk + " mission result : " , data)
 });
 
 //camera_canvas_onload
