@@ -13,6 +13,8 @@
     </div>
     <div>
       <canvas id="camera_stream_back" width="640" height="480" style="border: 1px solid black" ></canvas>
+    </div>
+    <div>  
       <input id="yaw_slider" type="range"> yaw
       <input id="roll_slider" type="range" > roll
       <input id="pitch_slider" type="range" > pitch
@@ -20,17 +22,22 @@
   </body>
 
   <div>
-    <button type="button" id="btn_spot_control_estop" onclick="spot_control_estop()"         disabled="">Estop</button>
-    <button type="button" id="btn_spot_control_power_on" onclick="spot_control_power_on()"      disabled="">Motor Power On</button>
-    <button type="button" id="btn_spot_control_power_off" onclick="spot_control_power_off()"     disabled="">Motor Power Off</button>
-    <button type="button" id="btn_spot_control_sit" onclick="spot_control_sit()"           disabled="">Sit</button>
-    <button type="button" id="btn_spot_control_stand" onclick="spot_control_stand()"         disabled="">Stand</button> 
-    <button type="button" id="btn_socket_test" onclick="socket_test()" >TEST</button> 
+    <button type="button" id="btn_spot_control_estop" onclick="spot_control_estop()" disabled="">Estop</button>
+    <button type="button" id="btn_spot_control_power_on" onclick="spot_control_power_on()" disabled="">Motor Power On</button>
+    <button type="button" id="btn_spot_control_power_off" onclick="spot_control_power_off()" disabled="">Motor Power Off</button>
+    <button type="button" id="btn_spot_control_sit" onclick="spot_control_sit()" disabled="">Sit</button>
+    <button type="button" id="btn_spot_control_stand" onclick="spot_control_stand()" disabled="">Stand</button> 
+    <button type="button" id="btn_spot_autowalk_list" onclick="get_autowalk_list()" >Autowalk</button> 
+    <select id="autowalk_list" onchange="call()"></select>
+    <button id="btn_spot_load_map" onclick="load_autowalk_map()" disabled= "">View map</button>
+  </div>
+
+  <div>
   </div>
 
   <input type = "text" id = "text_battery" value = "" readonly/>
-
+  <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.3.1/jquery.min.js"></script>
+  <script src="/assets/rangeslider-js/dist/rangeslider-js.min.js"></script>
   <script src="/socket.io/socket.io.js"></script>
   <script src="/release_index.js"></script>
-  <script src="/assets/rangeslider-js/dist/rangeslider-js.min.js"></script>
 </html>
