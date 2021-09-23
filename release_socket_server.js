@@ -1,53 +1,3 @@
-//Eureka Spot_Socket_Server info
-const SERVER_HOST_IP = '192.168.6.3'
-const PORT_Eureka_App = 3458;
-const BASE_URL = `http://${SERVER_HOST_IP}:${PORT_Eureka_App}/`
-const APPLICATION_NAME = 'RM-ROBOT-SERVER'
-
-//Eureka
-const Eureka = require('eureka-js-client').Eureka;
-
-const Eureka_client = new Eureka({
-  instance: {
-      // {현재 서버 아이피}:{어플리케이션이름}:{서버포트}
-      instanceId: `${SERVER_HOST_IP}:${APPLICATION_NAME}:${PORT_Eureka_App}`,
-      // {어플리케이션 이름}
-      app: APPLICATION_NAME,
-      // 현재 서버 어플리케이션 호스트 IP
-      hostName: SERVER_HOST_IP,
-      // 현재 서버 어플리케이션 호스트 IP
-      ipAddr: SERVER_HOST_IP,
-      port: {
-          // 서버 포트
-          '$': PORT_Eureka_App,
-          // 서버 포트 사용 활성화
-          '@enabled': true,
-      },
-      dataCenterInfo: {
-          '@class': 'com.netflix.appinfo.InstanceInfo$DefaultDataCenterInfo',
-          name: 'MyOwn',
-      },
-      homePageUrl: BASE_URL,
-      statusPageUrl: BASE_URL + 'actuator/info',
-      healthCheckUrl: BASE_URL + 'actuator/health',
-      vipAddress: APPLICATION_NAME,
-      secureVipAddress: APPLICATION_NAME,
-      metadata: {
-          'management.port': PORT_Eureka_App,
-      },
-  },
-  eureka: {
-      // 플랫폼 유레카 서버 주소
-      host: '192.168.6.3',
-      // 플랫폼 유레카 서버 포트
-      port: 8761,
-      // IP 주소 우선 설정
-      preferIpAddress: true,
-      // 유레카 서버 api path 설정
-      servicePath: '/eureka/apps/'
-  },
-});
-
 //socket server
 const express = require('express');
 const fs = require('fs');
@@ -95,7 +45,7 @@ io.sockets.on('connection', function(socket)
       io.to(web_client_id).emit('spot_connect_response', true)
     }
     
-    console.log('connected spot : ' , data)
+    console.log('connected spot : ' , data , socket.request.connection.remoteAddress)
   });
 
   //web client id 구분
@@ -114,7 +64,7 @@ io.sockets.on('connection', function(socket)
         io.to(web_client_id).emit('connect_response', true);
         io.to(web_client_id).emit('spot_connect_response', false)
 
-        console.log('connected web_client : ' , data)  
+        console.log('connected web_client : ' , data, socket.request.connection.remoteAddress)  
       
       }catch(err){
         console.log('unauthenticated socket : ' , socket.id)
@@ -140,7 +90,7 @@ io.sockets.on('connection', function(socket)
           io.to(web_client_id).emit('connect_response', true);
           io.to(web_client_id).emit('spot_connect_response', true)
 
-          console.log('connected web_client : ' , data)  
+          console.log('connected web_client : ' , data, socket.request.connection.remoteAddress)  
 
         }catch(err){
           console.log('unauthenticated socket : ' , socket.id)
@@ -188,6 +138,7 @@ io.sockets.on('connection', function(socket)
   });
 
   socket.on('spot_pose_cmd', function(data){
+    console.log(data)
     io.to(spot_control_client_id).emit('spot_pose_cmd', data)
   });
 
@@ -254,29 +205,97 @@ io.sockets.on('connection', function(socket)
       io.to(web_client_id).emit('spot_camera_back', data);
   });
 
-  //spot error message
-  socket.on('spot_error_message', (data) => 
-  {
-    io.to(web_client_id).emit('spot_error_message', data);
+  socket.on('get_autowalk_list', () => {
+    fs.readdir(__dirname + '/assets/Export_model', function(err, filelist){
+      io.to(web_client_id).emit('spot_autowalk_list', filelist)
+    });
   });
 
-  socket.on('button_test', (data) => {
-    //console.log()
+  socket.on('view_autowalk_map', (data) => {
+    console.log(data)
   });
 
   socket.on('start_autowalk', (data) =>{ // data : path to .autowalk file
-    io.to(spot_control_client_id).emit('start_autowalk', data);
+    io.to(spot_control_client_id).emit('replay_misson', data);
   });
 
+  socket.on('set_led', (data) => {
+    io.to(spot_control_client_id).emit('spot_cam_led_on', data);
+  });
+
+  socket.on('mission_result', (data) => {
+    io.to(web_client_id).emit('spot_replay_mission_result', data);
+  });
+
+  socket.on('spot_battery_temp', (data) => {
+    
+    let sum=0
+    let avg_temp=0
+
+    for(let i=0; i<data.length; i++){
+      sum += data[i].toFixed(3);
+    }
+    avg_temp = sum/data.length
+  });
 });
 
 server.listen(port, () => {
-
   //Eureka client
   Eureka_client.start(err => {
       console.log(`eureka client error : ${JSON.stringify(err)}`)
   })
-
-  console.log(`App is listening on port ${PORT_Eureka_App === undefined ? 3000 : PORT_Eureka_App}!`);
+  
   console.log(`server listening on port ${port}`)
 });
+
+
+//Eureka Spot_Socket_Server info
+const SERVER_HOST_IP = '192.168.6.3'
+const PORT_Eureka_App = 3458;
+const BASE_URL = `http://${SERVER_HOST_IP}:${PORT_Eureka_App}/`
+const APPLICATION_NAME = 'RM-ROBOT-SERVER'
+
+//Eureka
+const Eureka = require('eureka-js-client').Eureka;
+
+const Eureka_client = new Eureka({
+  instance: {
+      // {현재 서버 아이피}:{어플리케이션이름}:{서버포트}
+      instanceId: `${SERVER_HOST_IP}:${APPLICATION_NAME}:${PORT_Eureka_App}`,
+      // {어플리케이션 이름}
+      app: APPLICATION_NAME,
+      // 현재 서버 어플리케이션 호스트 IP
+      hostName: SERVER_HOST_IP,
+      // 현재 서버 어플리케이션 호스트 IP
+      ipAddr: SERVER_HOST_IP,
+      port: {
+          // 서버 포트
+          '$': PORT_Eureka_App,
+          // 서버 포트 사용 활성화
+          '@enabled': true,
+      },
+      dataCenterInfo: {
+          '@class': 'com.netflix.appinfo.InstanceInfo$DefaultDataCenterInfo',
+          name: 'MyOwn',
+      },
+      homePageUrl: BASE_URL,
+      statusPageUrl: BASE_URL + 'actuator/info',
+      healthCheckUrl: BASE_URL + 'actuator/health',
+      vipAddress: APPLICATION_NAME,
+      secureVipAddress: APPLICATION_NAME,
+      metadata: {
+          'management.port': PORT_Eureka_App,
+      },
+  },
+  eureka: {
+      // 플랫폼 유레카 서버 주소
+      host: '192.168.6.3',
+      // 플랫폼 유레카 서버 포트
+      port: 8761,
+      // IP 주소 우선 설정
+      preferIpAddress: true,
+      // 유레카 서버 api path 설정
+      servicePath: '/eureka/apps/'
+  },
+});
+
