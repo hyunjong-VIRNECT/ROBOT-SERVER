@@ -15,27 +15,69 @@
       <canvas id="camera_stream_back" width="640" height="480" style="border: 1px solid black" ></canvas>
     </div>
     <div>  
-      <input id="yaw_slider" type="range"> yaw
-      <input id="roll_slider" type="range" > roll
-      <input id="pitch_slider" type="range" > pitch
+      <input id="yaw_slider" 	type="range"> yaw
+      <input id="roll_slider" 	type="range" > roll
+      <input id="pitch_slider" 	type="range" > pitch
     </div>
   </body>
 
   <div>
-    <button type="button" id="btn_spot_control_estop" onclick="spot_control_estop()" disabled="">Estop</button>
-    <button type="button" id="btn_spot_control_power_on" onclick="spot_control_power_on()" disabled="">Motor Power On</button>
-    <button type="button" id="btn_spot_control_power_off" onclick="spot_control_power_off()" disabled="">Motor Power Off</button>
-    <button type="button" id="btn_spot_control_sit" onclick="spot_control_sit()" disabled="">Sit</button>
-    <button type="button" id="btn_spot_control_stand" onclick="spot_control_stand()" disabled="">Stand</button> 
-    <button type="button" id="btn_spot_autowalk_list" onclick="get_autowalk_list()" >Autowalk</button> 
-    <select id="autowalk_list" onchange="call()"></select>
+    <button type="button" id="btn_spot_control_estop" 	   onclick="spot_control_estop()" 	disabled="">Estop</button>
+    <button type="button" id="btn_spot_control_power_on"   onclick="spot_control_power_on()" 	disabled="">Motor Power On</button>
+    <button type="button" id="btn_spot_control_power_off"  onclick="spot_control_power_off()" 	disabled="">Motor Power Off</button>
+    <button type="button" id="btn_spot_control_sit" 	   onclick="spot_control_sit()" 	disabled="">Sit</button>
+    <button type="button" id="btn_spot_control_stand" 	   onclick="spot_control_stand()" 	disabled="">Stand</button> 
+    <button type="button" id="btn_spot_autowalk_list"      onclick="get_autowalk_list()" 	           >Autowalk</button> 
+    <select id="autowalk_list" 	   onchange="call()"></select>
     <button id="btn_spot_load_map" onclick="load_autowalk_map()" disabled= "">View map</button>
   </div>
 
   <div>
+    <button type="button" id="btn_spot_cam_control_plus"          onclick="spot_cam_control_plus()"         disabled="">CAM_PAN +</button>
+    <button type="button" id="btn_spot_cam_control_minus"         onclick="spot_cam_control_minus()"        disabled="">CAM_PAN -</button>
+    <button type="button" id="btn_spot_cam_control_tilt_plus"     onclick="spot_cam_control_tilt_plus()"        disabled="">CAM_TILT +</button>
+    <button type="button" id="btn_spot_cam_control_tilt_minus"    onclick="spot_cam_control_tilt_minus()"       disabled="">CAM_TILT -</button>
+    <button type="button" id="btn_spot_cam_control_zoom_plus"     onclick="spot_cam_control_zoom_plus()"        disabled="">CAM_ZOOM +</button> 
+    <button type="button" id="btn_spot_cam_control_zoom_minus"    onclick="spot_cam_control_zoom_minus()"       disabled="">CAM_ZOOM -</button> 
+    <button type="button" id="btn_spot_cam_control_default"       onclick="spot_cam_control_default()"          disabled="">CAM_DEFAULT</button>
+    <button type="button" onclick="window.open('https://192.168.80.3:31102/h264.sdp.html')"                                >SPOT_CAM_WEB</button>
   </div>
 
-  <input type = "text" id = "text_battery" value = "" readonly/>
+  <div>
+    <select id="select_spot_cam_compositor" onclick="spot_cam_compositor()">
+      <option value="mech"        >mech         </option>
+      <option value="mech_full"   >mech_full    </option>
+      <option value="mech_overlay">mech_overlay </option>
+      <option value="mech_ir"     >mech_ir      </option>
+      <option value="digi"        >digi         </option>
+      <option value="digi_overlay">digi_overlay </option>
+      <option value="digi_full"   >digi_full    </option>
+      <option value="c0"          >c0           </option>
+      <option value="c1"          >c1           </option>
+      <option value="c2"          >c2           </option>
+      <option value="c3"          >c3           </option>
+      <option value="c4"          >c4           </option>
+    </select>
+  </div>
+
+  <div>
+    <input  type="number" id = "input_cam_audio_volume" min = 0 max = 100>
+    <button type="button" id = "btn_cam_audio_sound"  onclick="spot_cam_audio_sound()">SetVolume</button>
+    <button type="button" id = "btn_cam_audio_beep"   onclick="spot_cam_audio_beep()">BEEP!</button>
+
+  </div>
+
+  <div>
+    <button type="button" onclick="spot_cam_webrtc()">CAM Capture</button>
+  </div>
+
+  <div>
+    <button type="button" onclick="spot_cam_light_off()">CAM Light Off</button>
+  </div>
+  
+  <h4>Spot Error Message</h4>
+  <input type = "text" id = "text_spot_error_message" value = "" size = "150" readonly/>
+  <input type = "text" id = "text_battery" 	      value = "" readonly/>
   <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.3.1/jquery.min.js"></script>
   <script src="/assets/rangeslider-js/dist/rangeslider-js.min.js"></script>
   <script src="/socket.io/socket.io.js"></script>

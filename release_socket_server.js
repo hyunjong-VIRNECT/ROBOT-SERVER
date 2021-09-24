@@ -1,7 +1,7 @@
 //socket server
 const express = require('express');
 const fs = require('fs');
-const options = { 
+const options = {
   key : fs.readFileSync(__dirname + '/ssl/virnect.key'),
   cert : fs.readFileSync(__dirname + '/ssl/virnect.crt')
 }
@@ -22,7 +22,10 @@ app.get('/healthcheck', (req,res) => {
 //client_id
 var clients = [];
 var clientInfo
-var spot_control_client_id = "", web_client_id = ""; 
+var spot_control_client_id = "", web_client_id = "";
+var spot_cam_pan, spot_cam_tilt, spot_cam_zoom;
+var spot_cam_tilt_max = 90.0, spot_cam_tilt_min = -30.0,
+    spot_cam_zoom_max = 30.0, spot_cam_zoom_min = 1.0;
 
 io.sockets.on('connection', function(socket)
 {
@@ -64,6 +67,9 @@ io.sockets.on('connection', function(socket)
         io.to(web_client_id).emit('connect_response', true);
         io.to(web_client_id).emit('spot_connect_response', false)
 
+        //web_client 접속시 SPOT CAM Position 전송
+        io.to(web_client_id).emit('spot_cam_init_position', {pan : spot_cam_pan, tilt : spot_cam_tilt, zoom : spot_cam_zoom})
+	
         console.log('connected web_client : ' , data, socket.request.connection.remoteAddress)  
       
       }catch(err){
@@ -74,7 +80,7 @@ io.sockets.on('connection', function(socket)
     }
     else if(clients.length == 1){
       if(clients[0].id == "REMOTE"){
-        io.to(socket.id).emit('connect_response', false);  
+        io.to(socket.id).emit('connect_response', false); 
         socket.disconnect()
       }else{
         
@@ -174,6 +180,49 @@ io.sockets.on('connection', function(socket)
     io.to(spot_control_client_id).emit('spot_control_power_off')
   });
 
+  //spot cam
+  socket.on('spot_cam_init_position', function(data)
+  {
+    console.log(data)
+    spot_cam_pan  = data["pan"]
+    spot_cam_tilt = data["tilt"]
+    spot_cam_zoom = data["zoom"]
+    
+    if(web_client_id != '')
+      io.to(web_client_id).emit('spot_cam_init_position', data)
+  });
+  
+  socket.on('spot_cam_control', function(data)
+  {
+    console.log('pan : ' + data['pan'] + ' tilt : ' + data['tilt'] + ' zoom : ' + data['zoom'])
+
+    if(data['tilt'] || data['zoom'])
+    {
+      //spot cam tilt min, max 
+      if(data['tilt'] > spot_cam_tilt_max)
+        data['tilt'] = spot_cam_tilt_max
+      else if(data['tilt'] < spot_cam_tilt_min)
+        data['tilt'] = spot_cam_tilt_min
+      else
+        true
+    
+      //spot cam zoom min, max
+      if(data['zoom'] > spot_cam_zoom_max)
+        data['zoom'] = spot_cam_zoom_max
+      else if(data['zoom'] < spot_cam_zoom_min)
+        data['zoom'] = spot_cam_zoom_min
+      else
+        true
+    }
+    else
+    {
+      true
+    }
+
+    io.to(spot_control_client_id).emit('spot_cam_control', data)
+  });
+
+
   // spot id = socket.id 일때만 이미지 받는 방식으로 수정
   socket.on('frontright_fisheye_image', (data) => 
   {
@@ -205,6 +254,12 @@ io.sockets.on('connection', function(socket)
       io.to(web_client_id).emit('spot_camera_back', data);
   });
 
+  //spot error message
+  socket.on('spot_error_message', (data) => 
+  {
+    io.to(web_client_id).emit('spot_error_message', data);
+  });
+
   socket.on('get_autowalk_list', () => {
     fs.readdir(__dirname + '/assets/Export_model', function(err, filelist){
       io.to(web_client_id).emit('spot_autowalk_list', filelist)
@@ -212,7 +267,7 @@ io.sockets.on('connection', function(socket)
   });
 
   socket.on('view_autowalk_map', (data) => {
-    console.log(data)
+    console.log(data);
   });
 
   socket.on('start_autowalk', (data) =>{ // data : path to .autowalk file

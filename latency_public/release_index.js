@@ -12,22 +12,6 @@ var spot_control_keycode =
 window.addEventListener("keydown", onKeyDown, false);
 window.addEventListener("keyup", onKeyUp, false);
 
-//element
-var input_text_error = document.getElementById("text_spot_error_message")
-var input_text_battery = document.getElementById("text_battery")
-var btn_estop = document.getElementById('btn_spot_control_estop')
-var btn_power_on = document.getElementById('btn_spot_control_power_on')
-var btn_power_off = document.getElementById('btn_spot_control_power_off')
-var btn_sit = document.getElementById('btn_spot_control_sit')
-var btn_stand = document.getElementById('btn_spot_control_stand')
-var btn_autowalk = document.getElementById('btn_spot_autowalk_list')
-var btn_viewmap = document.getElementById('btn_spot_load_map')
-
-var yaw_slider = document.getElementById('yaw_slider');
-var roll_slider = document.getElementById('roll_slider');
-var pitch_slider = document.getElementById('pitch_slider');
-
- 
 function onKeyDown(event) 
 {
   var keyCode = event.keyCode;
@@ -187,10 +171,12 @@ function spot_control_stand()
   socket.emit('spot_control_stand');
 };
 
-function spot_control_power_off(){
+function spot_control_power_off()
+{
   socket.emit('spot_control_power_off');
 };
 
+//spot autowalk function
 function get_autowalk_list(){
   socket.emit('get_autowalk_list')
 }
@@ -257,6 +243,160 @@ rangesliderJs.create(pitch_slider, {
   }
 });
 
+//PTZ SPOT CAM CONTROL
+
+var spot_cam_pan = 0.0, spot_cam_tilt = 0.0, spot_cam_zoom = 0.0;
+var spot_cam_tilt_max = 90.0, spot_cam_tilt_min = -30.0,
+    spot_cam_zoom_max = 30.0, spot_cam_zoom_min = 1.0;
+
+//PTZ Control
+function spot_cam_control_default()
+{
+  spot_cam_pan  = 140.0
+  spot_cam_tilt = 0.0
+  spot_cam_zoom = 1.0
+
+  socket.emit('spot_cam_control',
+    {command : 'ptz', ptz_command : 'set_position', ptz_name : 'mech', pan : spot_cam_pan, tilt : spot_cam_tilt, zoom : spot_cam_zoom});
+}
+
+function spot_cam_control_plus()
+{
+  spot_cam_pan += 5.0;
+
+  socket.emit('spot_cam_control', 
+    {command : 'ptz', ptz_command : 'set_position', ptz_name : 'mech', pan : spot_cam_pan, tilt : spot_cam_tilt, zoom : spot_cam_zoom});
+}
+
+function spot_cam_control_minus()
+{
+  spot_cam_pan -= 5.0;
+
+  socket.emit('spot_cam_control', 
+    {command : 'ptz', ptz_command : 'set_position', ptz_name : 'mech', pan : spot_cam_pan, tilt : spot_cam_tilt, zoom : spot_cam_zoom});
+}
+
+function spot_cam_control_tilt_plus()
+{
+  spot_cam_tilt += 5.0;
+
+  if(spot_cam_tilt > spot_cam_tilt_max)
+    spot_cam_tilt = spot_cam_tilt_max
+
+  socket.emit('spot_cam_control', 
+    {command : 'ptz', ptz_command : 'set_position', ptz_name : 'mech', pan : spot_cam_pan, tilt : spot_cam_tilt, zoom : spot_cam_zoom});
+}
+
+function spot_cam_control_tilt_minus()
+{
+  spot_cam_tilt -= 5.0;
+
+  if(spot_cam_tilt < spot_cam_tilt_min)
+    spot_cam_tilt = spot_cam_tilt_min
+
+  socket.emit('spot_cam_control', 
+    {command : 'ptz', ptz_command : 'set_position', ptz_name : 'mech', pan : spot_cam_pan, tilt : spot_cam_tilt, zoom : spot_cam_zoom});
+}
+
+function spot_cam_control_zoom_plus()
+{
+  spot_cam_zoom += 1.0;
+
+  if(spot_cam_zoom > spot_cam_zoom_max)
+    spot_cam_zoom = spot_cam_zoom_max
+  
+  socket.emit('spot_cam_control', 
+    {command : 'ptz', ptz_command : 'set_position', ptz_name : 'mech', pan : spot_cam_pan, tilt : spot_cam_tilt, zoom : spot_cam_zoom});
+}
+
+function spot_cam_control_zoom_minus()
+{
+  spot_cam_zoom -= 1.0;
+
+  if(spot_cam_zoom < spot_cam_zoom_min)
+    spot_cam_zoom = spot_cam_zoom_min
+  
+  socket.emit('spot_cam_control', 
+    {command : 'ptz', ptz_command : 'set_position', ptz_name : 'mech', pan : spot_cam_pan, tilt : spot_cam_tilt, zoom : spot_cam_zoom});
+}
+
+function spot_cam_control_get_position()
+{
+  socket.emit('spot_cam_control', 
+    {command : 'ptz', ptz_command : 'get_position', ptz_name : 'mech'});
+}
+
+//spot cam compositor
+function spot_cam_compositor()
+{
+  socket.emit('spot_cam_control', 
+    {command : 'compositor', compositor_command : 'set', name : select_cam_compositor.value});
+}
+
+//spot cam audio
+function spot_cam_audio_beep()
+{
+  socket.emit('spot_cam_control', 
+    {command : 'audio', audio_command : 'play', name : 'beep', gain : null});
+}
+
+function spot_cam_audio_sound()
+{
+  socket.emit('spot_cam_control', 
+    {command : 'audio', audio_command : 'set_volume', percentage : input_cam_audio_sound_value.value});
+}
+
+//spot cam webrtc
+function spot_cam_webrtc()
+{
+  socket.emit('spot_cam_control', 
+    {command : 'webrtc', webrtc_command : 'save', cam_ssl_cert : null, count : 1, dst_prefix : 'h264.sdp', sdp_filename : 'h264.sdp', sdp_port : 31102, track : 'video'});
+}
+
+var capture_count = 0;
+//spot cam light
+function spot_cam_webrtc()
+{
+  capture_count ++;
+  socket.emit('spot_cam_control', 
+    {command : 'webrtc', webrtc_command : 'save', cam_ssl_cert : null, count : capture_count, dst_prefix : 'h264.sdp', sdp_filename : 'h264.sdp', sdp_port : 31102, track : 'video'});
+}
+
+function spot_cam_light_off()
+{
+  socket.emit('spot_cam_control', 
+  {command : 'lighting', lighting_command : 'set', brightnesses : ['0.0', '0.0', '0.0', '0.0']});
+}
+
+//wasd element
+var input_text_error   = document.getElementById('text_spot_error_message')
+var input_text_battery = document.getElementById('text_battery')
+var btn_estop          = document.getElementById('btn_spot_control_estop')
+var btn_power_on       = document.getElementById('btn_spot_control_power_on')
+var btn_power_off      = document.getElementById('btn_spot_control_power_off')
+var btn_sit            = document.getElementById('btn_spot_control_sit')
+var btn_stand          = document.getElementById('btn_spot_control_stand')
+var yaw_slider 	       = document.getElementById('yaw_slider');
+var roll_slider        = document.getElementById('roll_slider');
+var pitch_slider       = document.getElementById('pitch_slider');
+
+//autowalk & viemap
+var btn_autowalk = document.getElementById('btn_spot_autowalk_list')
+var btn_viewmap  = document.getElementById('btn_spot_load_map')
+
+//ptz element
+var btn_cam_default             = document.getElementById('btn_spot_cam_control_default')
+var btn_cam_pan_plus            = document.getElementById('btn_spot_cam_control_plus')
+var btn_cam_pan_minus           = document.getElementById('btn_spot_cam_control_minus')
+var btn_cam_tilt_plus           = document.getElementById('btn_spot_cam_control_tilt_plus')
+var btn_cam_tilt_minus          = document.getElementById('btn_spot_cam_control_tilt_minus')
+var btn_cam_zoom_plus           = document.getElementById('btn_spot_cam_control_zoom_plus')
+var btn_cam_zoom_minus          = document.getElementById('btn_spot_cam_control_zoom_minus')
+var btn_cam_audio_beep          = document.getElementById('btn_spot_cam_audio_beep')
+var btn_cam_webrtc              = document.getElementById('btn_spot_cam_webrtc_capture')
+var input_cam_audio_sound_value = document.getElementById('input_cam_audio_volume')
+var select_cam_compositor       = document.getElementById('select_spot_cam_compositor') 
+
 
 //spot camera image resource
 var camera_resource_front_R = new Image(); 
@@ -287,6 +427,14 @@ socket.on('running_state', function(data){
     btn_sit.disabled       = true
     btn_stand.disabled     = true
     btn_estop.disabled     = false
+    //spot cam btn
+    btn_cam_pan_plus.disabled       = false
+    btn_cam_pan_minus.disabled      = false
+    btn_cam_tilt_plus.disabled      = false
+    btn_cam_tilt_minus.disabled     = false
+    btn_cam_zoom_plus.disabled      = false
+    btn_cam_zoom_minus.disabled     = false
+    btn_cam_default.disabled        = false
   }
   else if(estop_state == "NOT_ESTOPPED")
   { // ESTOP 아닌 상태, motor
@@ -307,6 +455,10 @@ socket.on('running_state', function(data){
     btn_estop.disabled = false
   }
 });
+
+socket.on('low_battery', () => {
+  window.alert("배터리 15% 미만 , 배터리 잔량 확인 필요")
+})
 
 //receive error message
 socket.on('spot_error_message', (data) =>
@@ -347,6 +499,15 @@ socket.on('spot_autowalk_list', (data) => {
 socket.on('spot_replay_mission_result', (data) => {
   let autowalk = $("#autowalk_list").val()
   window.alert(autowalk + " mission result : " , data)
+});
+
+//spot_cam_init_position
+socket.on('spot_cam_init_position', (data) =>
+{
+  spot_cam_pan  = data["pan"];
+  spot_cam_tilt = data["tilt"];
+  spot_cam_zoom = data["zoom"];
+  console.log(spot_cam_pan, spot_cam_tilt, spot_cam_zoom)
 });
 
 //camera_canvas_onload
