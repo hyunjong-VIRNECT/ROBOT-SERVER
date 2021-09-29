@@ -353,4 +353,3 @@ const Eureka_client = new Eureka({
       servicePath: '/eureka/apps/'
   },
 });
-
