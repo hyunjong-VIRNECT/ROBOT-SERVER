@@ -1,3 +1,47 @@
+//wasd element
+var input_text_error   = document.getElementById('text_spot_error_message')
+var input_text_battery = document.getElementById('text_battery')
+var btn_estop          = document.getElementById('btn_spot_control_estop')
+var btn_power_on       = document.getElementById('btn_spot_control_power_on')
+var btn_power_off      = document.getElementById('btn_spot_control_power_off')
+var btn_sit            = document.getElementById('btn_spot_control_sit')
+var btn_stand          = document.getElementById('btn_spot_control_stand')
+var yaw_slider 	       = document.getElementById('yaw_slider');
+var roll_slider        = document.getElementById('roll_slider');
+var pitch_slider       = document.getElementById('pitch_slider');
+
+//autowalk & viemap
+var btn_autowalk = document.getElementById('btn_spot_autowalk_list')
+var btn_viewmap  = document.getElementById('btn_spot_load_map')
+
+//ptz element
+var btn_cam_default             = document.getElementById('btn_spot_cam_control_default')
+var btn_cam_pan_plus            = document.getElementById('btn_spot_cam_control_plus')
+var btn_cam_pan_minus           = document.getElementById('btn_spot_cam_control_minus')
+var btn_cam_tilt_plus           = document.getElementById('btn_spot_cam_control_tilt_plus')
+var btn_cam_tilt_minus          = document.getElementById('btn_spot_cam_control_tilt_minus')
+var btn_cam_zoom_plus           = document.getElementById('btn_spot_cam_control_zoom_plus')
+var btn_cam_zoom_minus          = document.getElementById('btn_spot_cam_control_zoom_minus')
+var btn_cam_audio_beep          = document.getElementById('btn_spot_cam_audio_beep')
+var btn_cam_webrtc              = document.getElementById('btn_spot_cam_webrtc_capture')
+var input_cam_audio_sound_value = document.getElementById('input_cam_audio_volume')
+var select_cam_compositor       = document.getElementById('select_spot_cam_compositor') 
+
+
+//spot camera image resource
+var camera_resource_front_R = new Image(); 
+var camera_resource_front_L = new Image();
+var camera_resource_left    = new Image();
+var camera_resource_right   = new Image();
+var camera_resource_back    = new Image();
+
+//spot camera image canvas
+var camera_canvas_front_R = document.getElementById("camera_stream_front_R").getContext("2d"); 
+var camera_canvas_front_L = document.getElementById("camera_stream_front_L").getContext("2d");
+var camera_canvas_left    = document.getElementById("camera_stream_left").getContext("2d");
+var camera_canvas_right   = document.getElementById("camera_stream_right").getContext("2d");
+var camera_canvas_back    = document.getElementById("camera_stream_back").getContext("2d");
+
 //Spot Control Key
 var spot_control_keycode = 
 {
@@ -367,50 +411,6 @@ function spot_cam_light_off()
   socket.emit('spot_cam_control', 
   {command : 'lighting', lighting_command : 'set', brightnesses : ['0.0', '0.0', '0.0', '0.0']});
 }
-
-//wasd element
-var input_text_error   = document.getElementById('text_spot_error_message')
-var input_text_battery = document.getElementById('text_battery')
-var btn_estop          = document.getElementById('btn_spot_control_estop')
-var btn_power_on       = document.getElementById('btn_spot_control_power_on')
-var btn_power_off      = document.getElementById('btn_spot_control_power_off')
-var btn_sit            = document.getElementById('btn_spot_control_sit')
-var btn_stand          = document.getElementById('btn_spot_control_stand')
-var yaw_slider 	       = document.getElementById('yaw_slider');
-var roll_slider        = document.getElementById('roll_slider');
-var pitch_slider       = document.getElementById('pitch_slider');
-
-//autowalk & viemap
-var btn_autowalk = document.getElementById('btn_spot_autowalk_list')
-var btn_viewmap  = document.getElementById('btn_spot_load_map')
-
-//ptz element
-var btn_cam_default             = document.getElementById('btn_spot_cam_control_default')
-var btn_cam_pan_plus            = document.getElementById('btn_spot_cam_control_plus')
-var btn_cam_pan_minus           = document.getElementById('btn_spot_cam_control_minus')
-var btn_cam_tilt_plus           = document.getElementById('btn_spot_cam_control_tilt_plus')
-var btn_cam_tilt_minus          = document.getElementById('btn_spot_cam_control_tilt_minus')
-var btn_cam_zoom_plus           = document.getElementById('btn_spot_cam_control_zoom_plus')
-var btn_cam_zoom_minus          = document.getElementById('btn_spot_cam_control_zoom_minus')
-var btn_cam_audio_beep          = document.getElementById('btn_spot_cam_audio_beep')
-var btn_cam_webrtc              = document.getElementById('btn_spot_cam_webrtc_capture')
-var input_cam_audio_sound_value = document.getElementById('input_cam_audio_volume')
-var select_cam_compositor       = document.getElementById('select_spot_cam_compositor') 
-
-
-//spot camera image resource
-var camera_resource_front_R = new Image(); 
-var camera_resource_front_L = new Image();
-var camera_resource_left    = new Image();
-var camera_resource_right   = new Image();
-var camera_resource_back    = new Image();
-
-//spot camera image canvas
-var camera_canvas_front_R = document.getElementById("camera_stream_front_R").getContext("2d"); 
-var camera_canvas_front_L = document.getElementById("camera_stream_front_L").getContext("2d");
-var camera_canvas_left    = document.getElementById("camera_stream_left").getContext("2d");
-var camera_canvas_right   = document.getElementById("camera_stream_right").getContext("2d");
-var camera_canvas_back    = document.getElementById("camera_stream_back").getContext("2d");
 
 socket.on('running_state', function(data){
   // data.battery : battery , data.estop : ESTOP , data.power : power_state
