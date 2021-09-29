@@ -1,3 +1,47 @@
+//wasd element
+var input_text_error   = document.getElementById('text_spot_error_message')
+var input_text_battery = document.getElementById('text_battery')
+var btn_estop          = document.getElementById('btn_spot_control_estop')
+var btn_power_on       = document.getElementById('btn_spot_control_power_on')
+var btn_power_off      = document.getElementById('btn_spot_control_power_off')
+var btn_sit            = document.getElementById('btn_spot_control_sit')
+var btn_stand          = document.getElementById('btn_spot_control_stand')
+var yaw_slider 	       = document.getElementById('yaw_slider');
+var roll_slider        = document.getElementById('roll_slider');
+var pitch_slider       = document.getElementById('pitch_slider');
+
+//autowalk & viemap
+var btn_autowalk = document.getElementById('btn_spot_autowalk_list')
+var btn_viewmap  = document.getElementById('btn_spot_load_map')
+
+//ptz element
+var btn_cam_default             = document.getElementById('btn_spot_cam_control_default')
+var btn_cam_pan_plus            = document.getElementById('btn_spot_cam_control_plus')
+var btn_cam_pan_minus           = document.getElementById('btn_spot_cam_control_minus')
+var btn_cam_tilt_plus           = document.getElementById('btn_spot_cam_control_tilt_plus')
+var btn_cam_tilt_minus          = document.getElementById('btn_spot_cam_control_tilt_minus')
+var btn_cam_zoom_plus           = document.getElementById('btn_spot_cam_control_zoom_plus')
+var btn_cam_zoom_minus          = document.getElementById('btn_spot_cam_control_zoom_minus')
+var btn_cam_audio_beep          = document.getElementById('btn_spot_cam_audio_beep')
+var btn_cam_webrtc              = document.getElementById('btn_spot_cam_webrtc_capture')
+var input_cam_audio_sound_value = document.getElementById('input_cam_audio_volume')
+var select_cam_compositor       = document.getElementById('select_spot_cam_compositor') 
+
+
+//spot camera image resource
+var camera_resource_front_R = new Image(); 
+var camera_resource_front_L = new Image();
+var camera_resource_left    = new Image();
+var camera_resource_right   = new Image();
+var camera_resource_back    = new Image();
+
+//spot camera image canvas
+var camera_canvas_front_R = document.getElementById("camera_stream_front_R").getContext("2d"); 
+var camera_canvas_front_L = document.getElementById("camera_stream_front_L").getContext("2d");
+var camera_canvas_left    = document.getElementById("camera_stream_left").getContext("2d");
+var camera_canvas_right   = document.getElementById("camera_stream_right").getContext("2d");
+var camera_canvas_back    = document.getElementById("camera_stream_back").getContext("2d");
+
 //Spot Control Key
 var spot_control_keycode = 
 {
@@ -11,7 +55,7 @@ var spot_control_keycode =
 
 window.addEventListener("keydown", onKeyDown, false);
 window.addEventListener("keyup", onKeyUp, false);
- 
+
 function onKeyDown(event) 
 {
   var keyCode = event.keyCode;
@@ -65,7 +109,8 @@ function onKeyUp(event)
 }
  
 var v_x=0.0, v_y=0.0, v_rot=0.0
- 
+var yaw=0.0, roll=0.0, pitch=0.0
+
 var keyW = false;
 var keyA = false;
 var keyS = false;
@@ -112,7 +157,7 @@ setInterval(function()
 var motor_power, estop_state
 
 //socket
-const socket = io({transports: ['websocket'], upgrade: false}).connect('http://localhost:3458');
+const socket = io({transports: ['websocket'], upgrade: false}).connect('https://localhost:3458');
 
 //사용자 구분(socket client info object)
 const client_info = new Object()
@@ -175,32 +220,200 @@ function spot_control_power_off()
   socket.emit('spot_control_power_off');
 };
 
-//element
-var input_text_error   = document.getElementById("text_spot_error_message")
-var input_text_battery = document.getElementById("text_battery")
-var btn_estop          = document.getElementById('btn_spot_control_estop')
-var btn_power_on       = document.getElementById('btn_spot_control_power_on')
-var btn_power_off      = document.getElementById('btn_spot_control_power_off')
-var btn_sit            = document.getElementById('btn_spot_control_sit')
-var btn_stand          = document.getElementById('btn_spot_control_stand')
+//spot autowalk function
+function get_autowalk_list(){
+  socket.emit('get_autowalk_list')
+}
 
-//spot camera image resource
-var camera_resource_front_R = new Image(); 
-var camera_resource_front_L = new Image();
-var camera_resource_left    = new Image();
-var camera_resource_right   = new Image();
-var camera_resource_back    = new Image();
+function setup(data){
+  for (var cnt=0; cnt<data.length; cnt++){
+    var option = $("<option>"+data[cnt]+"</option>");
+    $('#autowalk_list').append(option)
+  }
+}
 
-//spot camera image canvas
-var camera_canvas_front_R = document.getElementById("camera_stream_front_R").getContext("2d"); 
-var camera_canvas_front_L = document.getElementById("camera_stream_front_L").getContext("2d");
-var camera_canvas_left    = document.getElementById("camera_stream_left").getContext("2d");
-var camera_canvas_right   = document.getElementById("camera_stream_right").getContext("2d");
-var camera_canvas_back    = document.getElementById("camera_stream_back").getContext("2d");
+function spot_led_on(){
+  socket.emit('set_led', 'test')
+}
+
+
+function call(){
+  let autowalk = $("#autowalk_list").val()
+  console.log(autowalk)
+  btn_viewmap.disabled= false
+}
+
+function startAutowalk(data){
+  socket.emit('start_autowalk', data)
+}
+
+function load_autowalk_map(){
+  let autowalk = $("#autowalk_list").val()
+  socket.emit('view_autowalk_map', autowalk)
+  const url = 'https://192.168.6.3:3458/gltf_viewer_test.html'
+  window.open(url)
+}
+
+rangesliderJs.create(yaw_slider, {
+  min: -0.5, 
+  max: 0.5, 
+  value: 0.0, 
+  step: 0.05,
+  onSlideEnd: (value, percent, position) => {
+    yaw = value
+    socket.emit('spot_pose_cmd', [yaw, roll, pitch])
+  }
+});
+
+rangesliderJs.create(roll_slider, {
+  min: -0.5, 
+  max: 0.5, 
+  value: 0.0, 
+  step: 0.05,
+  onSlideEnd: (value, percent, position) => {
+    roll = value
+    socket.emit('spot_pose_cmd', [yaw, roll, pitch])
+  }
+});
+
+rangesliderJs.create(pitch_slider, {
+  min: -0.5, 
+  max: 0.5, 
+  value: 0.0, 
+  step: 0.05,
+  onSlideEnd: (value, percent, position) => {
+    pitch = value
+    socket.emit('spot_pose_cmd', [yaw, roll, pitch])
+  }
+});
+
+//PTZ SPOT CAM CONTROL
+
+var spot_cam_pan = 0.0, spot_cam_tilt = 0.0, spot_cam_zoom = 0.0;
+var spot_cam_tilt_max = 90.0, spot_cam_tilt_min = -30.0,
+    spot_cam_zoom_max = 30.0, spot_cam_zoom_min = 1.0;
+
+//PTZ Control
+function spot_cam_control_default()
+{
+  spot_cam_pan  = 140.0
+  spot_cam_tilt = 0.0
+  spot_cam_zoom = 1.0
+
+  socket.emit('spot_cam_control',
+    {command : 'ptz', ptz_command : 'set_position', ptz_name : 'mech', pan : spot_cam_pan, tilt : spot_cam_tilt, zoom : spot_cam_zoom});
+}
+
+function spot_cam_control_plus()
+{
+  spot_cam_pan += 5.0;
+
+  socket.emit('spot_cam_control', 
+    {command : 'ptz', ptz_command : 'set_position', ptz_name : 'mech', pan : spot_cam_pan, tilt : spot_cam_tilt, zoom : spot_cam_zoom});
+}
+
+function spot_cam_control_minus()
+{
+  spot_cam_pan -= 5.0;
+
+  socket.emit('spot_cam_control', 
+    {command : 'ptz', ptz_command : 'set_position', ptz_name : 'mech', pan : spot_cam_pan, tilt : spot_cam_tilt, zoom : spot_cam_zoom});
+}
+
+function spot_cam_control_tilt_plus()
+{
+  spot_cam_tilt += 5.0;
+
+  if(spot_cam_tilt > spot_cam_tilt_max)
+    spot_cam_tilt = spot_cam_tilt_max
+
+  socket.emit('spot_cam_control', 
+    {command : 'ptz', ptz_command : 'set_position', ptz_name : 'mech', pan : spot_cam_pan, tilt : spot_cam_tilt, zoom : spot_cam_zoom});
+}
+
+function spot_cam_control_tilt_minus()
+{
+  spot_cam_tilt -= 5.0;
+
+  if(spot_cam_tilt < spot_cam_tilt_min)
+    spot_cam_tilt = spot_cam_tilt_min
+
+  socket.emit('spot_cam_control', 
+    {command : 'ptz', ptz_command : 'set_position', ptz_name : 'mech', pan : spot_cam_pan, tilt : spot_cam_tilt, zoom : spot_cam_zoom});
+}
+
+function spot_cam_control_zoom_plus()
+{
+  spot_cam_zoom += 1.0;
+
+  if(spot_cam_zoom > spot_cam_zoom_max)
+    spot_cam_zoom = spot_cam_zoom_max
+  
+  socket.emit('spot_cam_control', 
+    {command : 'ptz', ptz_command : 'set_position', ptz_name : 'mech', pan : spot_cam_pan, tilt : spot_cam_tilt, zoom : spot_cam_zoom});
+}
+
+function spot_cam_control_zoom_minus()
+{
+  spot_cam_zoom -= 1.0;
+
+  if(spot_cam_zoom < spot_cam_zoom_min)
+    spot_cam_zoom = spot_cam_zoom_min
+  
+  socket.emit('spot_cam_control', 
+    {command : 'ptz', ptz_command : 'set_position', ptz_name : 'mech', pan : spot_cam_pan, tilt : spot_cam_tilt, zoom : spot_cam_zoom});
+}
+
+function spot_cam_control_get_position()
+{
+  socket.emit('spot_cam_control', 
+    {command : 'ptz', ptz_command : 'get_position', ptz_name : 'mech'});
+}
+
+//spot cam compositor
+function spot_cam_compositor()
+{
+  socket.emit('spot_cam_control', 
+    {command : 'compositor', compositor_command : 'set', name : select_cam_compositor.value});
+}
+
+//spot cam audio
+function spot_cam_audio_beep()
+{
+  socket.emit('spot_cam_control', 
+    {command : 'audio', audio_command : 'play', name : 'beep', gain : null});
+}
+
+function spot_cam_audio_sound()
+{
+  socket.emit('spot_cam_control', 
+    {command : 'audio', audio_command : 'set_volume', percentage : input_cam_audio_sound_value.value});
+}
+
+//spot cam webrtc
+function spot_cam_webrtc()
+{
+  socket.emit('spot_cam_control', 
+    {command : 'webrtc', webrtc_command : 'save', cam_ssl_cert : null, count : 1, dst_prefix : 'h264.sdp', sdp_filename : 'h264.sdp', sdp_port : 31102, track : 'video'});
+}
+
+var capture_count = 0;
+//spot cam light
+function spot_cam_webrtc()
+{
+  capture_count ++;
+  socket.emit('spot_cam_control', 
+    {command : 'webrtc', webrtc_command : 'save', cam_ssl_cert : null, count : capture_count, dst_prefix : 'h264.sdp', sdp_filename : 'h264.sdp', sdp_port : 31102, track : 'video'});
+}
+
+function spot_cam_light_off()
+{
+  socket.emit('spot_cam_control', 
+  {command : 'lighting', lighting_command : 'set', brightnesses : ['0.0', '0.0', '0.0', '0.0']});
+}
 
 socket.on('running_state', function(data){
   // data.battery : battery , data.estop : ESTOP , data.power : power_state
-  
   battery_state = data.battery
   estop_state   = data.estop
   motor_power   = data.power
@@ -214,6 +427,14 @@ socket.on('running_state', function(data){
     btn_sit.disabled       = true
     btn_stand.disabled     = true
     btn_estop.disabled     = false
+    //spot cam btn
+    btn_cam_pan_plus.disabled       = false
+    btn_cam_pan_minus.disabled      = false
+    btn_cam_tilt_plus.disabled      = false
+    btn_cam_tilt_minus.disabled     = false
+    btn_cam_zoom_plus.disabled      = false
+    btn_cam_zoom_minus.disabled     = false
+    btn_cam_default.disabled        = false
   }
   else if(estop_state == "NOT_ESTOPPED")
   { // ESTOP 아닌 상태, motor
@@ -268,7 +489,25 @@ socket.on('spot_camera_right', (data) =>
 
 socket.on('spot_camera_back', (data) => 
 {
-  camera_resource_back.src = "data:image/jpg;base64," + data;
+  camera_resource_back.src = "data:image/png;base64," + data;
+});
+
+socket.on('spot_autowalk_list', (data) => {
+  setup(data)
+});
+
+socket.on('spot_replay_mission_result', (data) => {
+  let autowalk = $("#autowalk_list").val()
+  window.alert(autowalk + " mission result : " , data)
+});
+
+//spot_cam_init_position
+socket.on('spot_cam_init_position', (data) =>
+{
+  spot_cam_pan  = data["pan"];
+  spot_cam_tilt = data["tilt"];
+  spot_cam_zoom = data["zoom"];
+  console.log(spot_cam_pan, spot_cam_tilt, spot_cam_zoom)
 });
 
 //camera_canvas_onload
