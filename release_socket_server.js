@@ -8,11 +8,16 @@ const options = {
 const app = express();
 const server = require('https').createServer(options, app);
 
+// add path module
+const path = require('path');
 const io = require('socket.io')(server);
 const port = process.env.PORT || 3458;
 
-app.use(express.static(__dirname + '/latency_public'));
-app.use('/assets', express.static(__dirname + '/assets'))
+app.use(express.static(path.join(__dirname + '/src')));
+app.use('/assets', express.static(path.join(__dirname , '/assets')));
+app.use('/node_modules', express.static(path.join(__dirname , "/node_modules")));
+app.use('/build/', express.static(path.join(__dirname, 'node_modules/three/build')));
+app.use('/jsm/', express.static(path.join(__dirname, 'node_modules/three/examples/jsm')));
 
 app.get('/healthcheck', (req,res) => {
   res.header('Content-Type', 'application/json')
@@ -83,7 +88,6 @@ io.sockets.on('connection', function(socket)
         io.to(socket.id).emit('connect_response', false); 
         socket.disconnect()
       }else{
-        
         try
         {
           clientInfo = new Object();
@@ -144,7 +148,6 @@ io.sockets.on('connection', function(socket)
   });
 
   socket.on('spot_pose_cmd', function(data){
-    console.log(data)
     io.to(spot_control_client_id).emit('spot_pose_cmd', data)
   });
 
@@ -155,12 +158,14 @@ io.sockets.on('connection', function(socket)
   });
 
   //spot control
-  socket.on('spot_control_estop', () => 
+  socket.on('spot_control_estop', function(data, ack) 
   {
+    ack(true)
+    
     io.to(spot_control_client_id).emit('spot_control_estop')
   });
 
-  socket.on('spot_control_power_on', () => 
+  socket.on('spot_control_power_on', function(data) 
   {
     io.to(spot_control_client_id).emit('spot_control_power_on')
   });
@@ -175,7 +180,7 @@ io.sockets.on('connection', function(socket)
     io.to(spot_control_client_id).emit('spot_control_stand')
   });
 
-  socket.on('spot_control_power_off', () => 
+  socket.on('spot_control_power_off', function(data) 
   {
     io.to(spot_control_client_id).emit('spot_control_power_off')
   });
@@ -260,8 +265,8 @@ io.sockets.on('connection', function(socket)
     io.to(web_client_id).emit('spot_error_message', data);
   });
 
-  socket.on('get_autowalk_list', () => {
-    fs.readdir(__dirname + '/assets/Export_model', function(err, filelist){
+  socket.on('get_autowalk_list', (data) => {
+    fs.readdir(path.join(__dirname + '/assets/Export_model'), function(err, filelist){
       io.to(web_client_id).emit('spot_autowalk_list', filelist)
     });
   });
@@ -282,28 +287,25 @@ io.sockets.on('connection', function(socket)
     io.to(web_client_id).emit('spot_replay_mission_result', data);
   });
 
-  socket.on('spot_battery_temp', (data) => {
-    
-    let sum=0
-    let avg_temp=0
-
-    for(let i=0; i<data.length; i++){
-      sum += data[i].toFixed(3);
-    }
-    avg_temp = sum/data.length
+  socket.on("test_state", (data) => {
+    io.to(web_client_id).emit('spot_test_state', data);
   });
 });
 
 server.listen(port, () => {
+  
+  /*
   //Eureka client
   Eureka_client.start(err => {
       console.log(`eureka client error : ${JSON.stringify(err)}`)
   })
+  */
   
   console.log(`server listening on port ${port}`)
 });
 
 
+/*
 //Eureka Spot_Socket_Server info
 const SERVER_HOST_IP = '192.168.6.3'
 const PORT_Eureka_App = 3458;
@@ -353,3 +355,4 @@ const Eureka_client = new Eureka({
       servicePath: '/eureka/apps/'
   },
 });
+*/
