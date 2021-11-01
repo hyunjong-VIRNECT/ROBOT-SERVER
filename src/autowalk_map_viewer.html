@@ -1,0 +1,60 @@
+<!DOCTYPE html>
+<html lang="en">
+    <head>
+        <title>
+            SPOT autowalk map viewer
+        </title>
+        <meta
+            name="viewport"
+            content="width=device-width, user-scalable=no, minimum-scale=1.0, maximum-scale=1.0">
+
+        <link type="text/css" rel="stylesheet" href="/assets/css/main.css"/>
+        <link rel="icon" type="image/x-icon" href="/assets/favicon.ico"/>
+        <style>
+            #menu {
+                position: absolute;
+                bottom: 20px;
+                width: 100%;
+                text-align: center;
+                padding: 0;
+                margin: 0;
+            }
+
+            button {
+                color: rgb(255,255,255);
+                background: transparent;
+                border: 0;
+                padding: 5px 10px;
+                cursor: pointer;
+            }
+            button:hover {
+                background-color: rgba(0,255,255,0.5);
+            }
+            button:active {
+                color: #000000;
+                background-color: rgba(0,255,255,1);
+            }
+
+            .label {
+                text-shadow: -1px 1px 1px rgb(0,0,0);
+                font-size: 15px;
+            }
+        </style>
+        <script type="importmap">
+            {
+                "imports": {
+                    "three": "./build/three.module.js",
+                    "three/examples/jsm/controls/OrbitControls": "./jsm/controls/OrbitControls.js",
+                    "three/examples/jsm/loaders/GLTFLoader": "./jsm/loaders/GLTFLoader.js",
+                    "three/examples/jsm/renderers/CSS2DRenderer": "./jsm/renderers/CSS2DRenderer.js"
+                }
+            }
+        </script>
+    </head>
+    <body>
+        <div id="container"></div>
+        <div id="menu"></div>
+    </body>
+    <script src="/node_modules/jquery/dist/jquery.min.js"></script>
+    <script type="module" src="/renderer.js"></script>
+</html>
