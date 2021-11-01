@@ -8,16 +8,71 @@ const options = {
 const app = express();
 const server = require('https').createServer(options, app);
 
+// add path module
+const path = require('path');
 const io = require('socket.io')(server);
 const port = process.env.PORT || 3458;
 
-app.use(express.static(__dirname + '/latency_public'));
-app.use('/assets', express.static(__dirname + '/assets'))
+app.use(express.static(path.join(__dirname + '/src')));
+app.use('/assets', express.static(path.join(__dirname , '/assets')));
+app.use('/node_modules', express.static(path.join(__dirname , "/node_modules")));
+app.use('/build/', express.static(path.join(__dirname, 'node_modules/three/build')));
+app.use('/jsm/', express.static(path.join(__dirname, 'node_modules/three/examples/jsm')));
 
 app.get('/healthcheck', (req,res) => {
   res.header('Content-Type', 'application/json')
   res.send(200)
 })
+
+//Eureka Spot_Socket_Server info
+const SERVER_HOST_IP = '192.168.6.3'
+const PORT_Eureka_App = 3458;
+const BASE_URL = `http://${SERVER_HOST_IP}:${PORT_Eureka_App}/`
+const APPLICATION_NAME = 'RM-ROBOT-SERVER'
+
+//Eureka
+const Eureka = require('eureka-js-client').Eureka;
+
+const Eureka_client = new Eureka({
+  instance: {
+      // {현재 서버 아이피}:{어플리케이션이름}:{서버포트}
+      instanceId: `${SERVER_HOST_IP}:${APPLICATION_NAME}:${PORT_Eureka_App}`,
+      // {어플리케이션 이름}
+      app: APPLICATION_NAME,
+      // 현재 서버 어플리케이션 호스트 IP
+      hostName: SERVER_HOST_IP,
+      // 현재 서버 어플리케이션 호스트 IP
+      ipAddr: SERVER_HOST_IP,
+      port: {
+          // 서버 포트
+          '$': PORT_Eureka_App,
+          // 서버 포트 사용 활성화
+          '@enabled': true,
+      },
+      dataCenterInfo: {
+          '@class': 'com.netflix.appinfo.InstanceInfo$DefaultDataCenterInfo',
+          name: 'MyOwn',
+      },
+      homePageUrl: BASE_URL,
+      statusPageUrl: BASE_URL + 'actuator/info',
+      healthCheckUrl: BASE_URL + 'actuator/health',
+      vipAddress: APPLICATION_NAME,
+      secureVipAddress: APPLICATION_NAME,
+      metadata: {
+          'management.port': PORT_Eureka_App,
+      },
+  },
+  eureka: {
+      // 플랫폼 유레카 서버 주소
+      host: '192.168.6.3',
+      // 플랫폼 유레카 서버 포트
+      port: 8761,
+      // IP 주소 우선 설정
+      preferIpAddress: true,
+      // 유레카 서버 api path 설정
+      servicePath: '/eureka/apps/'
+  },
+});
 
 //client_id
 var clients = [];
@@ -83,7 +138,6 @@ io.sockets.on('connection', function(socket)
         io.to(socket.id).emit('connect_response', false); 
         socket.disconnect()
       }else{
-        
         try
         {
           clientInfo = new Object();
@@ -144,7 +198,6 @@ io.sockets.on('connection', function(socket)
   });
 
   socket.on('spot_pose_cmd', function(data){
-    console.log(data)
     io.to(spot_control_client_id).emit('spot_pose_cmd', data)
   });
 
@@ -155,12 +208,14 @@ io.sockets.on('connection', function(socket)
   });
 
   //spot control
-  socket.on('spot_control_estop', () => 
+  socket.on('spot_control_estop', function(data, ack) 
   {
+    ack(true)
+    
     io.to(spot_control_client_id).emit('spot_control_estop')
   });
 
-  socket.on('spot_control_power_on', () => 
+  socket.on('spot_control_power_on', function(data) 
   {
     io.to(spot_control_client_id).emit('spot_control_power_on')
   });
@@ -175,7 +230,7 @@ io.sockets.on('connection', function(socket)
     io.to(spot_control_client_id).emit('spot_control_stand')
   });
 
-  socket.on('spot_control_power_off', () => 
+  socket.on('spot_control_power_off', function(data) 
   {
     io.to(spot_control_client_id).emit('spot_control_power_off')
   });
@@ -260,8 +315,8 @@ io.sockets.on('connection', function(socket)
     io.to(web_client_id).emit('spot_error_message', data);
   });
 
-  socket.on('get_autowalk_list', () => {
-    fs.readdir(__dirname + '/assets/Export_model', function(err, filelist){
+  socket.on('get_autowalk_list', (data) => {
+    fs.readdir(path.join(__dirname + '/assets/Export_model'), function(err, filelist){
       io.to(web_client_id).emit('spot_autowalk_list', filelist)
     });
   });
@@ -282,74 +337,17 @@ io.sockets.on('connection', function(socket)
     io.to(web_client_id).emit('spot_replay_mission_result', data);
   });
 
-  socket.on('spot_battery_temp', (data) => {
-    
-    let sum=0
-    let avg_temp=0
-
-    for(let i=0; i<data.length; i++){
-      sum += data[i].toFixed(3);
-    }
-    avg_temp = sum/data.length
+  socket.on("test_state", (data) => {
+    io.to(web_client_id).emit('spot_test_state', data);
   });
 });
 
 server.listen(port, () => {
+  
   //Eureka client
   Eureka_client.start(err => {
       console.log(`eureka client error : ${JSON.stringify(err)}`)
   })
   
   console.log(`server listening on port ${port}`)
-});
-
-
-//Eureka Spot_Socket_Server info
-const SERVER_HOST_IP = '192.168.6.3'
-const PORT_Eureka_App = 3458;
-const BASE_URL = `http://${SERVER_HOST_IP}:${PORT_Eureka_App}/`
-const APPLICATION_NAME = 'RM-ROBOT-SERVER'
-
-//Eureka
-const Eureka = require('eureka-js-client').Eureka;
-
-const Eureka_client = new Eureka({
-  instance: {
-      // {현재 서버 아이피}:{어플리케이션이름}:{서버포트}
-      instanceId: `${SERVER_HOST_IP}:${APPLICATION_NAME}:${PORT_Eureka_App}`,
-      // {어플리케이션 이름}
-      app: APPLICATION_NAME,
-      // 현재 서버 어플리케이션 호스트 IP
-      hostName: SERVER_HOST_IP,
-      // 현재 서버 어플리케이션 호스트 IP
-      ipAddr: SERVER_HOST_IP,
-      port: {
-          // 서버 포트
-          '$': PORT_Eureka_App,
-          // 서버 포트 사용 활성화
-          '@enabled': true,
-      },
-      dataCenterInfo: {
-          '@class': 'com.netflix.appinfo.InstanceInfo$DefaultDataCenterInfo',
-          name: 'MyOwn',
-      },
-      homePageUrl: BASE_URL,
-      statusPageUrl: BASE_URL + 'actuator/info',
-      healthCheckUrl: BASE_URL + 'actuator/health',
-      vipAddress: APPLICATION_NAME,
-      secureVipAddress: APPLICATION_NAME,
-      metadata: {
-          'management.port': PORT_Eureka_App,
-      },
-  },
-  eureka: {
-      // 플랫폼 유레카 서버 주소
-      host: '192.168.6.3',
-      // 플랫폼 유레카 서버 포트
-      port: 8761,
-      // IP 주소 우선 설정
-      preferIpAddress: true,
-      // 유레카 서버 api path 설정
-      servicePath: '/eureka/apps/'
-  },
 });
