@@ -24,6 +24,56 @@ app.get('/healthcheck', (req,res) => {
   res.send(200)
 })
 
+//Eureka Spot_Socket_Server info
+const SERVER_HOST_IP = '192.168.6.3'
+const PORT_Eureka_App = 3458;
+const BASE_URL = `http://${SERVER_HOST_IP}:${PORT_Eureka_App}/`
+const APPLICATION_NAME = 'RM-ROBOT-SERVER'
+
+//Eureka
+const Eureka = require('eureka-js-client').Eureka;
+
+const Eureka_client = new Eureka({
+  instance: {
+      // {현재 서버 아이피}:{어플리케이션이름}:{서버포트}
+      instanceId: `${SERVER_HOST_IP}:${APPLICATION_NAME}:${PORT_Eureka_App}`,
+      // {어플리케이션 이름}
+      app: APPLICATION_NAME,
+      // 현재 서버 어플리케이션 호스트 IP
+      hostName: SERVER_HOST_IP,
+      // 현재 서버 어플리케이션 호스트 IP
+      ipAddr: SERVER_HOST_IP,
+      port: {
+          // 서버 포트
+          '$': PORT_Eureka_App,
+          // 서버 포트 사용 활성화
+          '@enabled': true,
+      },
+      dataCenterInfo: {
+          '@class': 'com.netflix.appinfo.InstanceInfo$DefaultDataCenterInfo',
+          name: 'MyOwn',
+      },
+      homePageUrl: BASE_URL,
+      statusPageUrl: BASE_URL + 'actuator/info',
+      healthCheckUrl: BASE_URL + 'actuator/health',
+      vipAddress: APPLICATION_NAME,
+      secureVipAddress: APPLICATION_NAME,
+      metadata: {
+          'management.port': PORT_Eureka_App,
+      },
+  },
+  eureka: {
+      // 플랫폼 유레카 서버 주소
+      host: '192.168.6.3',
+      // 플랫폼 유레카 서버 포트
+      port: 8761,
+      // IP 주소 우선 설정
+      preferIpAddress: true,
+      // 유레카 서버 api path 설정
+      servicePath: '/eureka/apps/'
+  },
+});
+
 //client_id
 var clients = [];
 var clientInfo
@@ -294,65 +344,10 @@ io.sockets.on('connection', function(socket)
 
 server.listen(port, () => {
   
-  /*
   //Eureka client
   Eureka_client.start(err => {
       console.log(`eureka client error : ${JSON.stringify(err)}`)
   })
-  */
   
   console.log(`server listening on port ${port}`)
 });
-
-
-/*
-//Eureka Spot_Socket_Server info
-const SERVER_HOST_IP = '192.168.6.3'
-const PORT_Eureka_App = 3458;
-const BASE_URL = `http://${SERVER_HOST_IP}:${PORT_Eureka_App}/`
-const APPLICATION_NAME = 'RM-ROBOT-SERVER'
-
-//Eureka
-const Eureka = require('eureka-js-client').Eureka;
-
-const Eureka_client = new Eureka({
-  instance: {
-      // {현재 서버 아이피}:{어플리케이션이름}:{서버포트}
-      instanceId: `${SERVER_HOST_IP}:${APPLICATION_NAME}:${PORT_Eureka_App}`,
-      // {어플리케이션 이름}
-      app: APPLICATION_NAME,
-      // 현재 서버 어플리케이션 호스트 IP
-      hostName: SERVER_HOST_IP,
-      // 현재 서버 어플리케이션 호스트 IP
-      ipAddr: SERVER_HOST_IP,
-      port: {
-          // 서버 포트
-          '$': PORT_Eureka_App,
-          // 서버 포트 사용 활성화
-          '@enabled': true,
-      },
-      dataCenterInfo: {
-          '@class': 'com.netflix.appinfo.InstanceInfo$DefaultDataCenterInfo',
-          name: 'MyOwn',
-      },
-      homePageUrl: BASE_URL,
-      statusPageUrl: BASE_URL + 'actuator/info',
-      healthCheckUrl: BASE_URL + 'actuator/health',
-      vipAddress: APPLICATION_NAME,
-      secureVipAddress: APPLICATION_NAME,
-      metadata: {
-          'management.port': PORT_Eureka_App,
-      },
-  },
-  eureka: {
-      // 플랫폼 유레카 서버 주소
-      host: '192.168.6.3',
-      // 플랫폼 유레카 서버 포트
-      port: 8761,
-      // IP 주소 우선 설정
-      preferIpAddress: true,
-      // 유레카 서버 api path 설정
-      servicePath: '/eureka/apps/'
-  },
-});
-*/
