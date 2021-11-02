@@ -15,6 +15,6 @@ WORKDIR $APP_HOME
 
 COPY --from=builder . .
 
-CMD ["npm", "start"]
-
 EXPOSE 3458
+
+CMD ["npm", "start"]
