@@ -224,7 +224,7 @@ function startAutowalk(data) {
 function load_autowalk_map() {
     let autowalk = $("#autowalk_list").val()
     socket.emit('view_autowalk_map', autowalk)
-    const url = 'https://localhost:3458/autowalk_map_viewer.html'
+    const url = 'https://192.168.6.3:3458/autowalk_map_viewer.html'
     window.open(url)
 }
 
