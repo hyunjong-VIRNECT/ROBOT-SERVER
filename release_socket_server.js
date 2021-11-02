@@ -208,10 +208,8 @@ io.sockets.on('connection', function(socket)
   });
 
   //spot control
-  socket.on('spot_control_estop', function(data, ack) 
-  {
-    ack(true)
-    
+  socket.on('spot_control_estop', function(data) 
+  {  
     io.to(spot_control_client_id).emit('spot_control_estop')
   });
 
