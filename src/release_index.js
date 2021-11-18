@@ -412,23 +412,9 @@ function spot_cam_audio_sound() {
     });
 }
 
-//spot cam webrtc
-function spot_cam_webrtc() {
-    socket.emit('spot_cam_control', {
-        command: 'webrtc',
-        webrtc_command: 'save',
-        cam_ssl_cert: null,
-        count: 1,
-        dst_prefix: 'h264.sdp',
-        sdp_filename: 'h264.sdp',
-        sdp_port: 31102,
-        track: 'video'
-    });
-}
-
+//spot cam webrtc capture
 var capture_count = 0;
-//spot cam light
-function spot_cam_webrtc() {
+function spot_cam_webrtc_capture() {
     capture_count++;
     socket.emit('spot_cam_control', {
         command: 'webrtc',
@@ -442,6 +428,20 @@ function spot_cam_webrtc() {
     });
 }
 
+//spot cam capture
+function spot_cam_capture() {
+    socket.emit('spot_cam_control', {
+        camera_name: 'ptz',
+        command: 'media_log',
+        media_log_command: 'store_retrieve',
+        dst: null,
+        stitching: true,
+        save_as_rgb24: false,
+        raw_ir:false        
+    });
+}
+
+//spot cam light
 function spot_cam_light_off() {
     socket.emit('spot_cam_control', {
         command: 'lighting',
