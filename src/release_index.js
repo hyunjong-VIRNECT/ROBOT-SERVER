@@ -1,5 +1,4 @@
 //wasd element
-var input_text_error = document.getElementById('text_spot_error_message')
 var input_text_battery = document.getElementById('text_battery')
 var btn_estop = document.getElementById('btn_spot_control_estop')
 var btn_power_on = document.getElementById('btn_spot_control_power_on')
@@ -35,11 +34,21 @@ var camera_resource_right = new Image();
 var camera_resource_back = new Image();
 
 //spot camera image canvas
-var camera_canvas_front_R = document.getElementById("camera_stream_front_R").getContext("2d");
-var camera_canvas_front_L = document.getElementById("camera_stream_front_L").getContext("2d");
-var camera_canvas_left = document.getElementById("camera_stream_left").getContext("2d");
-var camera_canvas_right = document.getElementById("camera_stream_right").getContext("2d");
-var camera_canvas_back = document.getElementById("camera_stream_back").getContext("2d");
+var camera_canvas_front_R = document
+    .getElementById("camera_stream_front_R")
+    .getContext("2d");
+var camera_canvas_front_L = document
+    .getElementById("camera_stream_front_L")
+    .getContext("2d");
+var camera_canvas_left = document
+    .getElementById("camera_stream_left")
+    .getContext("2d");
+var camera_canvas_right = document
+    .getElementById("camera_stream_right")
+    .getContext("2d");
+var camera_canvas_back = document
+    .getElementById("camera_stream_back")
+    .getContext("2d");
 
 //Spot Control Key
 var spot_control_keycode = {
@@ -102,12 +111,8 @@ function onKeyUp(event) {
     }
 }
 
-var v_x = 0.0,
-    v_y = 0.0,
-    v_rot = 0.0
-var yaw = 0.0,
-    roll = 0.0,
-    pitch = 0.0
+var v_x = 0.0, v_y = 0.0, v_rot = 0.0;
+var yaw = 0.0, roll = 0.0, pitch = 0.0;
 
 var keyW = false;
 var keyA = false;
@@ -148,7 +153,7 @@ setInterval(function () {
 var motor_power, estop_state
 
 //socket
-const socket = io({transports: ['websocket'], upgrade: false}).connect('https://localhost:3458');
+var socket = io({transports: ['websocket'], upgrade: false}).connect('https://localhost:3458');
 
 //사용자 구분(socket client info object)
 const client_info = new Object()
@@ -207,10 +212,6 @@ function get_autowalk_list() {
     socket.emit('get_autowalk_list')
 }
 
-function spot_led_on() {
-    socket.emit('set_led', 'test')
-}
-
 function call() {
     let autowalk = $("#autowalk_list").val()
     console.log(autowalk)
@@ -226,6 +227,10 @@ function load_autowalk_map() {
     socket.emit('view_autowalk_map', autowalk)
     const url = 'https://192.168.6.3:3458/autowalk_map_viewer.html'
     window.open(url)
+}
+
+function waypoint_id(data, data1){
+    socket.emit('waypoint_id', data, data1)
 }
 
 rangesliderJs.create(yaw_slider, {
@@ -412,9 +417,23 @@ function spot_cam_audio_sound() {
     });
 }
 
-//spot cam webrtc capture
+//spot cam webrtc
+function spot_cam_webrtc() {
+    socket.emit('spot_cam_control', {
+        command: 'webrtc',
+        webrtc_command: 'save',
+        cam_ssl_cert: null,
+        count: 1,
+        dst_prefix: 'h264.sdp',
+        sdp_filename: 'h264.sdp',
+        sdp_port: 31102,
+        track: 'video'
+    });
+}
+
 var capture_count = 0;
-function spot_cam_webrtc_capture() {
+//spot cam light
+function spot_cam_webrtc() {
     capture_count++;
     socket.emit('spot_cam_control', {
         command: 'webrtc',
@@ -428,20 +447,6 @@ function spot_cam_webrtc_capture() {
     });
 }
 
-//spot cam capture
-function spot_cam_capture() {
-    socket.emit('spot_cam_control', {
-        camera_name: 'ptz',
-        command: 'media_log',
-        media_log_command: 'store_retrieve',
-        dst: null,
-        stitching: true,
-        save_as_rgb24: false,
-        raw_ir:false        
-    });
-}
-
-//spot cam light
 function spot_cam_light_off() {
     socket.emit('spot_cam_control', {
         command: 'lighting',
@@ -450,11 +455,11 @@ function spot_cam_light_off() {
     });
 }
 
-socket.on('spot_test_state', function (data) {
-    var data1 = JSON.parse(data)
-    var data2 = JSON.stringify(data1, null, 4)
+socket.on('battery_state', function (data) {
+    //var raw_data = JSON.parse(data)
+    var battery_state = JSON.stringify(JSON.parse(data), null, 4)
 
-    input_text_battery.value = data2
+    input_text_battery.value = battery_state
 });
 
 socket.on('running_state', function (data) {
@@ -499,10 +504,6 @@ socket.on('low_battery', () => {
     window.alert("배터리 15% 미만 , 배터리 잔량 확인 필요")
 })
 
-//receive error message
-socket.on('spot_error_message', (data) => {
-    input_text_error.value = data;
-});
 
 //receive camera img resource
 socket.on('spot_camera_front_R', (data) => {
@@ -526,22 +527,15 @@ socket.on('spot_camera_back', (data) => {
 });
 
 socket.on('spot_autowalk_list', (data) => {
+    
     // clear -> add
-
-    $('#autowalk_list')
-        .children('option')
-        .remove();
+    $('#autowalk_list').children('option').remove();
 
     for (var cnt = 0; cnt < data.length; cnt++) {
         var option = $("<option>" + data[cnt] + "</option>");
         $('#autowalk_list').append(option)
     }
 
-});
-
-socket.on('spot_replay_mission_result', (data) => {
-    let autowalk = $("#autowalk_list").val()
-    window.alert(autowalk + " mission result : ", data)
 });
 
 //spot_cam_init_position
