@@ -23,8 +23,11 @@ app.get('/healthcheck', (req,res) => {
   res.header('Content-Type', 'application/json')
   res.send(200)
 })
-/*
-//Eureka Spot_Socket_Server info
+
+/**
+ * @author : Chulhee Lee
+ * @brief : Eureka Client to register with the Staging Server for Remote deployment products
+*/
 const SERVER_HOST_IP = '192.168.6.3'
 const PORT_Eureka_App = 3458;
 const BASE_URL = `http://${SERVER_HOST_IP}:${PORT_Eureka_App}/`
@@ -35,18 +38,18 @@ const Eureka = require('eureka-js-client').Eureka;
 
 const Eureka_client = new Eureka({
   instance: {
-      // {현재 서버 아이피}:{어플리케이션이름}:{서버포트}
+      // {current server ip}:{application name}:{server port}
       instanceId: `${SERVER_HOST_IP}:${APPLICATION_NAME}:${PORT_Eureka_App}`,
-      // {어플리케이션 이름}
+      // {application name}
       app: APPLICATION_NAME,
-      // 현재 서버 어플리케이션 호스트 IP
+      // current server application host IP
       hostName: SERVER_HOST_IP,
-      // 현재 서버 어플리케이션 호스트 IP
+      // current server application host IP
       ipAddr: SERVER_HOST_IP,
       port: {
-          // 서버 포트
+          // server port
           '$': PORT_Eureka_App,
-          // 서버 포트 사용 활성화
+          // enable server port usage
           '@enabled': true,
       },
       dataCenterInfo: {
@@ -63,13 +66,13 @@ const Eureka_client = new Eureka({
       },
   },
   eureka: {
-      // 플랫폼 유레카 서버 주소
+      // platform eureka server address
       host: '192.168.6.3',
-      // 플랫폼 유레카 서버 포트
+      // platform eureka server port
       port: 8761,
-      // IP 주소 우선 설정
+      // IP address preference
       preferIpAddress: true,
-      // 유레카 서버 api path 설정
+      // Eureka server api path setting
       servicePath: '/eureka/apps/'
   },
 });
@@ -81,6 +84,7 @@ var clientInfo;
 // io.to().emit 시 사용되는 클라이언트들의 socket.id를 저장할 변수
 var spot_control_client_id = "", web_client_id = "";
 
+//spot cam current position
 var spot_cam_pan, spot_cam_tilt, spot_cam_zoom;
 var spot_cam_tilt_max = 90.0, spot_cam_tilt_min = -30.0,
     spot_cam_zoom_max = 30.0, spot_cam_zoom_min = 1.0;
@@ -273,7 +277,12 @@ io.sockets.on('connection', function(socket)
     io.to(spot_control_client_id).emit('spot_control_power_off')
   });
 
-  //spot cam
+  /**
+   * @author : Chulhee Lee
+   * @brief : The initial position of the spot cam received from the robot client 
+   *          is stored in the pan, tilt, and zoom parameters of the spot cam declared in the robot server.
+   * @param : object (Current position values ​​for spot cam's pan, tilt, and zoom)
+  */  
   socket.on('spot_cam_init_position', function(data)
   {
     console.log(data)
@@ -285,34 +294,7 @@ io.sockets.on('connection', function(socket)
       io.to(web_client_id).emit('spot_cam_init_position', data)
   });
   
-  socket.on('spot_cam_control', function(data)  {
-    console.log('pan : ' + data['pan'] + ' tilt : ' + data['tilt'] + ' zoom : ' + data['zoom'])
 
-    if(data['tilt'] || data['zoom'])
-    {
-      //spot cam tilt min, max 
-      if(data['tilt'] > spot_cam_tilt_max)
-        data['tilt'] = spot_cam_tilt_max
-      else if(data['tilt'] < spot_cam_tilt_min)
-        data['tilt'] = spot_cam_tilt_min
-      else
-        true
-    
-      //spot cam zoom min, max
-      if(data['zoom'] > spot_cam_zoom_max)
-        data['zoom'] = spot_cam_zoom_max
-      else if(data['zoom'] < spot_cam_zoom_min)
-        data['zoom'] = spot_cam_zoom_min
-      else
-        true
-    }
-    else
-    {
-      true
-    }
-
-    io.to(spot_control_client_id).emit('spot_cam_control', data)
-  });
 
 
   /**
@@ -428,14 +410,45 @@ io.sockets.on('connection', function(socket)
     io.to(web_client_id).emit('go_to_response', data)
   });
 
+  /**
+   * @author : Chulhee Lee
+   * @brief : All commands for spot cam operation received from robot web client
+   * @param : object (spot cam command parameter)
+  */
+  socket.on('spot_cam_control', function(data)
+  {
+    io.to(spot_control_client_id).emit('spot_cam_control', data)
+  });
+
+  /**
+   * @author : Chulhee Lee
+   * @brief : Transmits image name property data received from the robot client to the robot web client
+   * @param : list (spot cam image name property data)
+  */
+  socket.on('spot_cam_data_receive_uuid_list', (data) => {
+    io.to(web_client_id).emit('spot_cam_data_receive_uuid_list', data);
+  });
+
+  /**
+   * @author : Chulhee Lee
+   * @brief : Transmits the image data received from the robot client to the robot web client
+   * @param : object (byte array of spot cam image data)
+  */
+  socket.on('spot_cam_data_receive_image', (data) => {
+    io.to(web_client_id).emit('spot_cam_data_receive_image', data);
+  });
 });
 
+/**
+ * @author : Chulhee Lee
+ * @brief : Eureka Client to register with the Staging Server for Remote deployment products
+*/
 server.listen(port, () => {
-  /*
+  
   //Eureka client
   Eureka_client.start(err => {
       console.log(`eureka client error : ${JSON.stringify(err)}`)
   })
-  */
+  
   console.log(`server listening on port ${port}`)
 });

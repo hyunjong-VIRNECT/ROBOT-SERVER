@@ -29,6 +29,11 @@
                     width="480"
                     height="640"
                     style="border: 1px solid black"></canvas>
+                <canvas
+                    id="camera_stream_back"
+                    width="640"
+                    height="480"
+                    style="border: 1px solid black"></canvas>
             </div>
             <div>
                 <canvas
@@ -44,10 +49,10 @@
             </div>
             <div>
                 <canvas
-                    id="camera_stream_back"
-                    width="640"
-                    height="480"
-                    style="border: 1px solid black"></canvas>
+                    id="spot_cam_receive_image"
+                    width="1920"
+                    height="1080"
+                    style="border: 1px solid white"></canvas>
             </div>
         </div>
         <div class="right">
@@ -100,46 +105,65 @@
             </div>
             <hr>
 
-            <h5>Spot CAM PTZ func</h5>
+            <h5>Spot CAM PTZ Control func</h5>
             <div>
                 <button
                     type="button"
                     id="btn_spot_cam_control_plus"
                     onclick="spot_cam_control_plus()"
-                    disabled="">CAM_PAN +</button>
+                    disabled="">PAN +</button>
                 <button
                     type="button"
                     id="btn_spot_cam_control_minus"
                     onclick="spot_cam_control_minus()"
-                    disabled="">CAM_PAN -</button>
+                    disabled="">PAN -</button>
+                <br>
                 <button
                     type="button"
                     id="btn_spot_cam_control_tilt_plus"
                     onclick="spot_cam_control_tilt_plus()"
-                    disabled="">CAM_TILT +</button>
+                    disabled="">TILT +</button>
                 <button
                     type="button"
                     id="btn_spot_cam_control_tilt_minus"
                     onclick="spot_cam_control_tilt_minus()"
-                    disabled="">CAM_TILT -</button>
+                    disabled="">TILT -</button>
+                <br>
                 <button
                     type="button"
                     id="btn_spot_cam_control_zoom_plus"
                     onclick="spot_cam_control_zoom_plus()"
-                    disabled="">CAM_ZOOM +</button>
+                    disabled="">ZOOM +</button>
                 <button
                     type="button"
                     id="btn_spot_cam_control_zoom_minus"
                     onclick="spot_cam_control_zoom_minus()"
-                    disabled="">CAM_ZOOM -</button>
+                    disabled="">ZOOM -</button>
+                <br>
                 <button
                     type="button"
                     id="btn_spot_cam_control_default"
                     onclick="spot_cam_control_default()"
-                    disabled="">CAM_DEFAULT</button>
+                    disabled="">DEFAULT</button>
+            </div>
+            <hr>
+
+            <h5>Spot CAM audio & led func</h5>
+            <div>
+                <input type="number" id="input_cam_audio_volume" min="0" max="100">
+                <button type="button" id="btn_cam_audio_sound" onclick="spot_cam_audio_sound()">SetVolume</button>
+                <button type="button" id="btn_cam_audio_beep" onclick="spot_cam_audio_beep()">BEEP!</button>
+                <button type="button" onclick="spot_cam_light_off()">CAM Light Off</button>
+            </div>
+            <hr>
+            
+            <h5>Spot CAM+IR WebRTC Capture</h5>
+            <div>
                 <button
-                    type="button"
-                    onclick="window.open('https://192.168.80.3:31102/h264.sdp.html')">SPOT_CAM_WEB</button>
+                type="button"
+                onclick="window.open('https://192.168.80.3:31102/h264.sdp.html')">WebRTC_PAGE</button>
+                <button type="button" onclick="spot_cam_webrtc_capture()">WebRTC Capture</button>
+                <br>
                 <select id="select_spot_cam_compositor" onclick="spot_cam_compositor()">
                     <option value="mech">mech
                     </option>
@@ -166,23 +190,37 @@
                     <option value="c4">c4
                     </option>
                 </select>
+                <button type="button" onclick="spot_cam_capture()">SPOT CAM Capture</button>
             </div>
             <hr>
 
-            <h5>Spot CAM audio & led func</h5>
+            <h5>Spot CAM Data Receive</h5>
             <div>
-                <input type="number" id="input_cam_audio_volume" min="0" max="100">
-                <button type="button" id="btn_cam_audio_sound" onclick="spot_cam_audio_sound()">SetVolume</button>
-                <button type="button" id="btn_cam_audio_beep" onclick="spot_cam_audio_beep()">BEEP!</button>
-                <button type="button" onclick="spot_cam_light_off()">CAM Light Off</button>
+                <button type="button" onclick="spot_cam_data_receive_uuid_list()">UUID List</button>
+                <button type="button" onclick="spot_cam_data_receive_ptz_image()">PTZ Image </button>
+                <button type="button" onclick="spot_cam_data_receive_ir_image()">IR Image </button>
+            </div>
+            <div>
+                <textarea
+                id="text_uuid_list"
+                cols="70"
+                rows="17"
+                readonly="readonly"
+                style="resize: none;"></textarea>
             </div>
             <hr>
 
+            <h5>Spot Error Message</h5>
             <div>
-                <button type="button" onclick="spot_cam_webrtc()">CAM Capture</button>
+                <input
+                    type="text"
+                    id="text_spot_error_message"
+                    value=""
+                    size="30"
+                    readonly="readonly"/>
             </div>
+
             <hr>
-            
             <div>
                 <h5>Battery State</h5>
                 <textarea

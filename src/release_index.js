@@ -13,7 +13,7 @@ var pitch_slider = document.getElementById('pitch_slider');
 var btn_autowalk = document.getElementById('btn_spot_autowalk_list')
 var btn_viewmap = document.getElementById('btn_spot_load_map')
 
-//ptz element
+//spot cam function element
 var btn_cam_default = document.getElementById('btn_spot_cam_control_default')
 var btn_cam_pan_plus = document.getElementById('btn_spot_cam_control_plus')
 var btn_cam_pan_minus = document.getElementById('btn_spot_cam_control_minus')
@@ -25,6 +25,7 @@ var btn_cam_audio_beep = document.getElementById('btn_spot_cam_audio_beep')
 var btn_cam_webrtc = document.getElementById('btn_spot_cam_webrtc_capture')
 var input_cam_audio_sound_value = document.getElementById('input_cam_audio_volume')
 var select_cam_compositor = document.getElementById('select_spot_cam_compositor')
+var text_area_uuid = document.getElementById('text_uuid_list');
 
 //spot camera image resource
 var camera_resource_front_R = new Image();
@@ -32,23 +33,15 @@ var camera_resource_front_L = new Image();
 var camera_resource_left = new Image();
 var camera_resource_right = new Image();
 var camera_resource_back = new Image();
+var spot_cam_resource_receive_image = new Image();
 
 //spot camera image canvas
-var camera_canvas_front_R = document
-    .getElementById("camera_stream_front_R")
-    .getContext("2d");
-var camera_canvas_front_L = document
-    .getElementById("camera_stream_front_L")
-    .getContext("2d");
-var camera_canvas_left = document
-    .getElementById("camera_stream_left")
-    .getContext("2d");
-var camera_canvas_right = document
-    .getElementById("camera_stream_right")
-    .getContext("2d");
-var camera_canvas_back = document
-    .getElementById("camera_stream_back")
-    .getContext("2d");
+var camera_canvas_front_R = document.getElementById("camera_stream_front_R").getContext("2d");
+var camera_canvas_front_L = document.getElementById("camera_stream_front_L").getContext("2d");
+var camera_canvas_left = document.getElementById("camera_stream_left").getContext("2d");
+var camera_canvas_right = document.getElementById("camera_stream_right").getContext("2d");
+var camera_canvas_back = document.getElementById("camera_stream_back").getContext("2d");
+var spot_cam_canvas_receive_image = document.getElementById("spot_cam_receive_image").getContext("2d");
 
 //Spot Control Key
 var spot_control_keycode = {
@@ -153,7 +146,7 @@ setInterval(function () {
 var motor_power, estop_state
 
 //socket client 생성
-var socket = io({transports: ['websocket'], upgrade: false}).connect('https://localhost:3458');
+var socket = io({transports: ['websocket'], upgrade: false}).connect('https://192.168.6.3:3458');
 
 //사용자 구분(socket client info object)
 const client_info = new Object()
@@ -331,7 +324,12 @@ rangesliderJs.create(pitch_slider, {
     }
 });
 
-//PTZ SPOT CAM CONTROL
+/**
+ * @author Chulhee Lee
+ * @brief All spot cam control functions
+ * @SocketMessage : Send spot cam control command parameters to robot server
+*/
+// spot cam control parameter
 var spot_cam_pan = 0.0,
     spot_cam_tilt = 0.0,
     spot_cam_zoom = 0.0;
@@ -340,8 +338,13 @@ var spot_cam_tilt_max = 90.0,
     spot_cam_zoom_max = 30.0,
     spot_cam_zoom_min = 1.0;
 
-//PTZ Control
+/**
+ * @author : Chulhee Lee
+ * @brief : spot ptz move to initial position of camera(facing the front)
+*/
 function spot_cam_control_default() {
+
+    //spot ptz initial position
     spot_cam_pan = 140.0
     spot_cam_tilt = 0.0
     spot_cam_zoom = 1.0
@@ -356,32 +359,45 @@ function spot_cam_control_default() {
     });
 }
 
+/**
+ * @author : Chulhee Lee
+ * @brief : Rotate the spot cam to the right with respect to the spot robot
+ * @variable : 'spot_cam_pan' is a variable that changes the spot cam position.
+*/
 function spot_cam_control_plus() {
     spot_cam_pan += 5.0;
 
     socket.emit('spot_cam_control', {
         command: 'ptz',
         ptz_command: 'set_position',
-        ptz_name: 'mech',
         pan: spot_cam_pan,
         tilt: spot_cam_tilt,
         zoom: spot_cam_zoom
     });
 }
 
+/**
+ * @author : Chulhee Lee
+ * @brief : Rotate the spot cam to the left with respect to the spot robot
+ * @variable : 'spot_cam_pan' is a variable that changes the spot cam position.
+*/
 function spot_cam_control_minus() {
     spot_cam_pan -= 5.0;
 
     socket.emit('spot_cam_control', {
         command: 'ptz',
         ptz_command: 'set_position',
-        ptz_name: 'mech',
         pan: spot_cam_pan,
         tilt: spot_cam_tilt,
         zoom: spot_cam_zoom
     });
 }
 
+/**
+ * @author : Chulhee Lee
+ * @brief : Rotate the spot cam upwards relative to the spot robot
+ * @variable : 'spot_cam_tilt' is a variable that changes the spot cam position.
+*/
 function spot_cam_control_tilt_plus() {
     spot_cam_tilt += 5.0;
 
@@ -391,13 +407,17 @@ function spot_cam_control_tilt_plus() {
     socket.emit('spot_cam_control', {
         command: 'ptz',
         ptz_command: 'set_position',
-        ptz_name: 'mech',
         pan: spot_cam_pan,
         tilt: spot_cam_tilt,
         zoom: spot_cam_zoom
     });
 }
 
+/**
+ * @author : Chulhee Lee
+ * @brief : Rotating the spot cam in the direction of the ground based on the spot robot
+ * @variable : 'spot_cam_tilt' is a variable that changes the spot cam position.
+*/
 function spot_cam_control_tilt_minus() {
     spot_cam_tilt -= 5.0;
 
@@ -407,13 +427,17 @@ function spot_cam_control_tilt_minus() {
     socket.emit('spot_cam_control', {
         command: 'ptz',
         ptz_command: 'set_position',
-        ptz_name: 'mech',
         pan: spot_cam_pan,
         tilt: spot_cam_tilt,
         zoom: spot_cam_zoom
     });
 }
 
+/**
+ * @author : Chulhee Lee
+ * @brief : Zoom in on spot cam
+ * @variable : 'spot_cam_zoom' is a variable that changes the zoom value of the spot cam.
+*/
 function spot_cam_control_zoom_plus() {
     spot_cam_zoom += 1.0;
 
@@ -423,13 +447,17 @@ function spot_cam_control_zoom_plus() {
     socket.emit('spot_cam_control', {
         command: 'ptz',
         ptz_command: 'set_position',
-        ptz_name: 'mech',
         pan: spot_cam_pan,
         tilt: spot_cam_tilt,
         zoom: spot_cam_zoom
     });
 }
 
+/**
+ * @author : Chulhee Lee
+ * @brief : Zoom in on spot cam
+ * @variable : 'spot_cam_zoom' is a variable that changes the zoom value of the spot cam.
+*/
 function spot_cam_control_zoom_minus() {
     spot_cam_zoom -= 1.0;
 
@@ -439,22 +467,16 @@ function spot_cam_control_zoom_minus() {
     socket.emit('spot_cam_control', {
         command: 'ptz',
         ptz_command: 'set_position',
-        ptz_name: 'mech',
         pan: spot_cam_pan,
         tilt: spot_cam_tilt,
         zoom: spot_cam_zoom
     });
 }
 
-function spot_cam_control_get_position() {
-    socket.emit('spot_cam_control', {
-        command: 'ptz',
-        ptz_command: 'get_position',
-        ptz_name: 'mech'
-    });
-}
-
-//spot cam compositor
+/**
+ * @author : Chulhee Lee
+ * @brief : Switching the camera mode of the spot cam. Available on Spotcam's webrtc page.
+*/
 function spot_cam_compositor() {
     socket.emit('spot_cam_control', {
         command: 'compositor',
@@ -463,7 +485,10 @@ function spot_cam_compositor() {
     });
 }
 
-//spot cam audio
+/**
+ * @author : Chulhee Lee
+ * @brief : Spot cam buzzer sound
+*/
 function spot_cam_audio_beep() {
     socket.emit('spot_cam_control', {
         command: 'audio',
@@ -473,6 +498,10 @@ function spot_cam_audio_beep() {
     });
 }
 
+/**
+ * @author : Chulhee Lee
+ * @brief : Set the spot cam's audio sound. (Set a numeric value between 0 and 100 in the input text component)
+*/
 function spot_cam_audio_sound() {
     socket.emit('spot_cam_control', {
         command: 'audio',
@@ -481,23 +510,14 @@ function spot_cam_audio_sound() {
     });
 }
 
-//spot cam webrtc
-function spot_cam_webrtc() {
-    socket.emit('spot_cam_control', {
-        command: 'webrtc',
-        webrtc_command: 'save',
-        cam_ssl_cert: null,
-        count: 1,
-        dst_prefix: 'h264.sdp',
-        sdp_filename: 'h264.sdp',
-        sdp_port: 31102,
-        track: 'video'
-    });
-}
-
+/**
+ * @author : Chulhee Lee
+ * @brief : Capture the webrtc screen of the spot cam. After that, it is saved in the robot client directory.
+ * @description : Prevents the webrtc screen from being overwritten in the robot client directory
+ *                (If capture_count is removed, it is saved in the form of an overwrite in the robot client directory.)
+*/
 var capture_count = 0;
-//spot cam light
-function spot_cam_webrtc() {
+function spot_cam_webrtc_capture() {
     capture_count++;
     socket.emit('spot_cam_control', {
         command: 'webrtc',
@@ -511,13 +531,99 @@ function spot_cam_webrtc() {
     });
 }
 
+/**
+ * @author : Chulhee Lee
+ * @brief : Change the camera mode of the spot cam to save the changed camera image
+*/
+function spot_cam_capture() {
+
+    //save the images can from other cameras by changing the camera_name parameter. 
+    socket.emit('spot_cam_control', {
+        camera_name: 'ir',
+        command: 'media_log',
+        media_log_command: 'store_retrieve',
+        dst: null,
+        stitching: true,
+        save_as_rgb24: false,
+        raw_ir:false        
+    });
+}
+
+/**
+ * @author : Chulhee Lee
+ * @brief : turn off the spot cam's light
+*/
 function spot_cam_light_off() {
+
+    //adjust the brightness of the light by adjusting the value of the brightness parameter.
     socket.emit('spot_cam_control', {
         command: 'lighting',
         lighting_command: 'set',
         brightnesses: ['0.0', '0.0', '0.0', '0.0']
     });
 }
+
+/**
+ * @author : Chulhee Lee
+ * @brief : get the name property data of the spot cam image
+*/
+function spot_cam_data_receive_uuid_list() {
+    socket.emit('spot_cam_control', {
+        command: 'media_log',
+        media_log_command: 'list_logpoints_name'
+    });
+}
+
+/**
+ * @author : Chulhee Lee
+ * @brief : get data in the form of a byte array for the ptz camera image stored in the spot cam.
+ *          (specify the name(uuid) for the ptz image stored in the spot cam)
+*/
+function spot_cam_data_receive_ptz_image() {
+    socket.emit('spot_cam_control', {
+        command: 'media_log',
+        media_log_command: 'retrieve',
+        dst: null,
+        stitching: true,
+        save_as_rgb24: false,
+        raw_ir: false,
+        name: '63252d8a-4136-11ec-b296-48b02d182c42'
+    });
+}
+
+/**
+ * @author : Chulhee Lee
+ * @brief : get data in the form of a byte array for the ir camera image stored in the spot cam.
+ *               (specify the name(uuid) for the ir image stored in the spot cam)
+*/
+function spot_cam_data_receive_ir_image() {
+    socket.emit('spot_cam_control', {
+        command: 'media_log',
+        media_log_command: 'retrieve',
+        dst: null,
+        stitching: true,
+        save_as_rgb24: false,
+        raw_ir: false,
+        name: '32b98184-566f-11ec-8bcd-48b02d182c42'   
+    });
+}
+
+/**
+ * @author : Chulhee Lee
+ * @brief : Visualize the spot cam image data received from the robot server on canvas.
+*/
+socket.on('spot_cam_data_receive_image', function(data) {
+    spot_cam_resource_receive_image.src = "data:image/jpg;base64," + data;
+});
+
+/**
+ * @author : Chulhee Lee
+ * @brief : Visualize the name property data of the spotcam image received from the robot server in the text area component
+*/
+socket.on('spot_cam_data_receive_uuid_list', function(data) {
+    text_uuid_list.value = data;
+});
+
 
 /**
  * @brief 로봇 배터리 정보에 대해 수신하는 메시지
@@ -649,4 +755,12 @@ camera_resource_right.onload = function () {
 
 camera_resource_back.onload = function () {
     camera_canvas_back.drawImage(camera_resource_back, 0, 0);
+}
+/**
+ * @author : Chulhee Lee
+ * @brief : Visualize the spot cam image data received from the robot server on canvas.
+*/
+spot_cam_resource_receive_image.onload = function () {
+    spot_cam_canvas_receive_image.clearRect(0, 0, 1920, 1080);
+    spot_cam_canvas_receive_image.drawImage(spot_cam_resource_receive_image, 0, 0);
 }
