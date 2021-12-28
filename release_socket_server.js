@@ -76,7 +76,6 @@ const Eureka_client = new Eureka({
       servicePath: '/eureka/apps/'
   },
 });
-*/
 
 // 서버에 접속한 클라이언트들의 정보를 저장할 배열
 var clients = [];
