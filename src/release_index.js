@@ -233,16 +233,15 @@ function spot_control_stand() {
     socket.emit('spot_control_stand');
 };
 
-
 /**
- * @brief estop 제어에 대한 버튼 클릭 이벤트 발생시 호출되는 함수, 서버에 estop 제어에 대한 메시지 전송
+ * @brief Autowalk 버튼 클릭 웹 클라이언트로부터 서버 디렉토리 내에 저장된 autowalk gltf 파일 리스트를 요청받는 메시지
  */
 function get_autowalk_list() {
     socket.emit('get_autowalk_list')
 }
 
 /**
- * @brief estop 제어에 대한 버튼 클릭 이벤트 발생시 호출되는 함수, 서버에 estop 제어에 대한 메시지 전송
+ * @brief 현재 선택되어 있는 Autowalk 맵의 이름을 반환하는 함수
  */
 function call() {
     let autowalk = $("#autowalk_list").val()
