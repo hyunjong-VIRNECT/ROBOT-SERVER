@@ -24,7 +24,10 @@ app.get('/healthcheck', (req,res) => {
   res.send(200)
 })
 
-//Eureka Spot_Socket_Server info
+/**
+ * @author : Chulhee Lee
+ * @brief : Eureka Client to register with the Staging Server for Remote deployment products
+*/
 const SERVER_HOST_IP = '192.168.6.3'
 const PORT_Eureka_App = 3458;
 const BASE_URL = `http://${SERVER_HOST_IP}:${PORT_Eureka_App}/`
@@ -35,18 +38,18 @@ const Eureka = require('eureka-js-client').Eureka;
 
 const Eureka_client = new Eureka({
   instance: {
-      // {현재 서버 아이피}:{어플리케이션이름}:{서버포트}
+      // {current server ip}:{application name}:{server port}
       instanceId: `${SERVER_HOST_IP}:${APPLICATION_NAME}:${PORT_Eureka_App}`,
-      // {어플리케이션 이름}
+      // {application name}
       app: APPLICATION_NAME,
-      // 현재 서버 어플리케이션 호스트 IP
+      // current server application host IP
       hostName: SERVER_HOST_IP,
-      // 현재 서버 어플리케이션 호스트 IP
+      // current server application host IP
       ipAddr: SERVER_HOST_IP,
       port: {
-          // 서버 포트
+          // server port
           '$': PORT_Eureka_App,
-          // 서버 포트 사용 활성화
+          // enable server port usage
           '@enabled': true,
       },
       dataCenterInfo: {
@@ -63,30 +66,37 @@ const Eureka_client = new Eureka({
       },
   },
   eureka: {
-      // 플랫폼 유레카 서버 주소
+      // platform eureka server address
       host: '192.168.6.3',
-      // 플랫폼 유레카 서버 포트
+      // platform eureka server port
       port: 8761,
-      // IP 주소 우선 설정
+      // IP address preference
       preferIpAddress: true,
-      // 유레카 서버 api path 설정
+      // Eureka server api path setting
       servicePath: '/eureka/apps/'
   },
 });
 
-//client_id
+// 서버에 접속한 클라이언트들의 정보를 저장할 배열
 var clients = [];
-var clientInfo
+var clientInfo;
+// io.to().emit 시 사용되는 클라이언트들의 socket.id를 저장할 변수
 var spot_control_client_id = "", web_client_id = "";
+
+//spot cam current position
 var spot_cam_pan, spot_cam_tilt, spot_cam_zoom;
 var spot_cam_tilt_max = 90.0, spot_cam_tilt_min = -30.0,
     spot_cam_zoom_max = 30.0, spot_cam_zoom_min = 1.0;
 
 io.sockets.on('connection', function(socket)
 {
-  //spot client id 구분
+  /**
+   * @brief 파이썬 클라이언트가 서버에 접속하는 경우 수신되는 메시지, 메시지를 전송한 클라이언트의 정보 저장
+   * @param data 파이썬 클라이언트 robot_id.nickname 문자열
+   */
   socket.on('spot_control_client_id', function(data)
   {
+    // robot_id.ninkname 과 socket.id 를 저장하는 Object 생성
     clientInfo = new Object();
     clientInfo.id = data;
     clientInfo.clientId = socket.id;
@@ -95,18 +105,21 @@ io.sockets.on('connection', function(socket)
 
     if(web_client_id == "")
     {
-      io.to(spot_control_client_id).emit('remote_client_not_yet', "wait");
+      io.to(spot_control_client_id).emit('remote_client_not_yet');
     }
     else
     {
-      io.to(spot_control_client_id).emit('remote_client_connect', "web_client_id");
+      io.to(spot_control_client_id).emit('remote_client_connect', web_client_id);
       io.to(web_client_id).emit('spot_connect_response', true)
     }
     
     console.log('connected spot : ' , data , socket.request.connection.remoteAddress)
   });
 
-  //web client id 구분
+  /**
+   * @brief 웹 클라이언트가 서버에 접속하는 경우 수신되는 메시지, 메시지를 전송한 웹 클라이언트의 정보 저장
+   * @param data 웹 클라이언트의 remoteId 문자열 정보 
+   */
   socket.on('web_client_id', function(data)
   {
     if(clients.length == 0)
@@ -165,10 +178,12 @@ io.sockets.on('connection', function(socket)
     }
   });
 
-  //연결 해제
+  /**
+   * @brief 서버에 접속한 클라이언트의 연결이 끊어질 경우 수신되는 메시지
+   */
   socket.on('disconnect', () => 
   {
-    // disconnect 일때 누가 disconnect 인지 판단하고 접속 정보 관리
+    // disconnect 이벤트가 발생한 클라이언트의 socket.id 를 검색하여 클라이언트 정보 관리
     for (var i = 0, len = clients.length; i < len; ++i) 
     {
       var c = clients[i];
@@ -179,10 +194,10 @@ io.sockets.on('connection', function(socket)
           console.log('diconnect socket' , c.id , socket.id);
           clients.splice(i, 1);
           web_client_id = "";
-          io.to(spot_control_client_id).emit('remote_client_disconnect', web_client_id);
+          io.to(spot_control_client_id).emit('remote_client_disconnect');
           break;    
         }
-        else if(c.id == "spot-BD-01110009")
+        else if(c.id == "spot-BD-01110009") // robot_id.nickname
         {
           console.log('disconnect spot : ' , c.id);
           io.to(web_client_id).emit('spot_connect_response', false)          
@@ -193,47 +208,80 @@ io.sockets.on('connection', function(socket)
     }
   });
 
+  /**
+   * @brief 웹 클라이언트로부터 로봇의 주행 제어 요청을 수신하는 메시지
+   * @param data 로봇 이동 제어에 대한 파라미터 (data[0]: 전진 후진에 대한 속도, data[1]: 좌우 이동에 대한 속도, data[2]: 로봇 회전에 대한 속도)
+   */
   socket.on('spot_drive_cmd', function(data){
     io.to(spot_control_client_id).emit('spot_control_cmd', data)
   });
 
+  /**
+   * @brief 웹 클라이언트로부터 로봇의 자세 제어 요청을 수신하는 메시지
+   * @param data yaw, roll, pitch 값 List (data[0]:yaw, data[1]:roll, data[2]:pitch]
+   */
   socket.on('spot_pose_cmd', function(data){
     io.to(spot_control_client_id).emit('spot_pose_cmd', data)
   });
 
+  /**
+   * @brief 파이썬 클라이언트로부터 로봇의 배터리 충전량, Estop 상태 정보, 모터 Power 상태 정보를 수신하는 메시지
+   * @param data 배터리, Estop 상태, 모터 Power 상태에 대한 Object (data.battery : battery , data.Estop : estop_state , data.Power : power_state)
+   */
   socket.on('spot_running_state', function(data)
   {
-    // data.battery : battery , data.Estop : estop_state , data.Power : power_state
     io.to(web_client_id).emit('running_state', data)
   });
 
-  //spot control
+  /**
+   * @brief 웹 클라이언트로부터 로봇의 Estop 상태 제어 요청을 수신하는 메시지
+   * @param data ''
+   */  
   socket.on('spot_control_estop', function(data) 
   {  
     io.to(spot_control_client_id).emit('spot_control_estop')
   });
 
+  /**
+   * @brief 웹 클라이언트로부터 모터 전원 제어(On) 요청을 수신하는 메시지
+   * @param data ''
+   */  
   socket.on('spot_control_power_on', function(data) 
   {
     io.to(spot_control_client_id).emit('spot_control_power_on')
   });
 
+  /**
+   * @brief 웹 클라이언트로부터 로봇의 sit 제어 요청을 수신하는 메시지
+   */
   socket.on('spot_control_sit', () => 
   {
     io.to(spot_control_client_id).emit('spot_control_sit')
   });
 
+  /**
+   * @brief 웹 클라이언트로부터 로봇의 stand 제어 요청을 수신하는 메시지
+   */
   socket.on('spot_control_stand', () => 
   {
     io.to(spot_control_client_id).emit('spot_control_stand')
   });
 
+  /**
+   * @brief 웹 클라이언트로부터 모터 전원 제어(Off) 요청을 수신하는 메시지
+   * @param data ''
+   */  
   socket.on('spot_control_power_off', function(data) 
   {
     io.to(spot_control_client_id).emit('spot_control_power_off')
   });
 
-  //spot cam
+  /**
+   * @author : Chulhee Lee
+   * @brief : The initial position of the spot cam received from the robot client 
+   *          is stored in the pan, tilt, and zoom parameters of the spot cam declared in the robot server.
+   * @param : object (Current position values ​​for spot cam's pan, tilt, and zoom)
+  */  
   socket.on('spot_cam_init_position', function(data)
   {
     console.log(data)
@@ -245,101 +293,155 @@ io.sockets.on('connection', function(socket)
       io.to(web_client_id).emit('spot_cam_init_position', data)
   });
   
-  socket.on('spot_cam_control', function(data)
-  {
-    console.log('pan : ' + data['pan'] + ' tilt : ' + data['tilt'] + ' zoom : ' + data['zoom'])
-
-    if(data['tilt'] || data['zoom'])
-    {
-      //spot cam tilt min, max 
-      if(data['tilt'] > spot_cam_tilt_max)
-        data['tilt'] = spot_cam_tilt_max
-      else if(data['tilt'] < spot_cam_tilt_min)
-        data['tilt'] = spot_cam_tilt_min
-      else
-        true
-    
-      //spot cam zoom min, max
-      if(data['zoom'] > spot_cam_zoom_max)
-        data['zoom'] = spot_cam_zoom_max
-      else if(data['zoom'] < spot_cam_zoom_min)
-        data['zoom'] = spot_cam_zoom_min
-      else
-        true
-    }
-    else
-    {
-      true
-    }
-
-    io.to(spot_control_client_id).emit('spot_cam_control', data)
-  });
 
 
-  // spot id = socket.id 일때만 이미지 받는 방식으로 수정
+
+  /**
+   * @brief 로봇의 5대 카메라 중, 전면 우측 카메라의 fisheye 이미지를 수신하는 메시지
+   * @param data base64 포맷으로 인코딩된 이미지 데이터
+  */
   socket.on('frontright_fisheye_image', (data) => 
   {
     if(socket.id == spot_control_client_id)
       io.to(web_client_id).emit('spot_camera_front_R', data);
   });
 
+  /**
+  * @brief 로봇의 5대 카메라 중, 전면 좌측 카메라의 fisheye 이미지를 수신하는 메시지
+  * @param data base64 포맷으로 인코딩된 이미지 데이터
+  */
   socket.on('frontleft_fisheye_image', (data) => 
   {
     if(socket.id == spot_control_client_id)
       io.to(web_client_id).emit('spot_camera_front_L', data);
   });
 
+  /**
+  * @brief 로봇의 5대 카메라 중, 좌측 카메라의 fisheye 이미지를 수신하는 메시지
+  * @param data base64 포맷으로 인코딩된 이미지 데이터
+  */
   socket.on('left_fisheye_image', (data) => 
   {
     if(socket.id == spot_control_client_id)
       io.to(web_client_id).emit('spot_camera_left', data);
   });
 
+  /**
+  * @brief 로봇의 5대 카메라 중, 우측 카메라의 fisheye 이미지를 수신하는 메시지
+  * @param data base64 포맷으로 인코딩된 이미지 데이터
+  */
   socket.on('right_fisheye_image', (data) => 
   {
     if(socket.id == spot_control_client_id)
       io.to(web_client_id).emit('spot_camera_right', data);
   });
 
+  /**
+  * @brief 로봇의 5대 카메라 중, 후면 카메라의 fisheye 이미지를 수신하는 메시지
+  * @param data base64 포맷으로 인코딩된 이미지 데이터
+  */
   socket.on('back_fisheye_image', (data) => 
   {
     if(socket.id == spot_control_client_id)
       io.to(web_client_id).emit('spot_camera_back', data);
   });
 
-  //spot error message
-  socket.on('spot_error_message', (data) => 
-  {
-    io.to(web_client_id).emit('spot_error_message', data);
-  });
-
-  socket.on('get_autowalk_list', (data) => {
+  /**
+  * @brief 웹 클라이언트로부터 서버 디렉토리 내에 저장된 autowalk gltf 파일 리스트를 요청받는 메시지
+  * @param filelist 서버 디렉토리 내에 저장된 gltf 파일 리스트
+  */
+  socket.on('get_autowalk_list', () => {
     fs.readdir(path.join(__dirname + '/assets/Export_model'), function(err, filelist){
       io.to(web_client_id).emit('spot_autowalk_list', filelist)
     });
   });
 
-  socket.on('view_autowalk_map', (data) => {
-    console.log(data);
+  /**
+  * @brief 웹 클라이언트로부터 Autowalk replay mission 에 대한 요청을 수신하는 메시지
+  * @param data 요청하는 autowalk 파일 이름
+  */
+  socket.on('start_autowalk', (data) =>{
+    autowalk_map = data
+    io.to(spot_control_client_id).emit('replay_misson', autowalk_map);
+    console.log('autowalk_map : ' , autowalk_map)
   });
 
-  socket.on('start_autowalk', (data) =>{ // data : path to .autowalk file
-    io.to(spot_control_client_id).emit('replay_misson', data);
-  });
-
-  socket.on('set_led', (data) => {
-    io.to(spot_control_client_id).emit('spot_cam_led_on', data);
-  });
-
+  /**
+  * @brief Autowalk replay mission 에 대한 결과를 수신하는 메시지
+  * @param data Autowalk replay mission 결과 메시지 (Success, Failed, Pauesd)
+  */
   socket.on('mission_result', (data) => {
     io.to(web_client_id).emit('spot_replay_mission_result', data);
   });
 
-  socket.on("test_state", (data) => {
-    io.to(web_client_id).emit('spot_test_state', data);
+  /**
+  * @brief 로봇 배터리 정보에 대해 수신하는 메시지
+  * @param data 로봇 배터리 정보에 대한 json 문자열 (id, charge percentage, voltage, temperature)
+  */
+  socket.on('battery_state', (data) => {
+    io.to(web_client_id).emit('battery_state', data);
+  });
+
+  /**
+  * @brief Autowalk 또는 Waypoint 이동 시, 로봇의 position, rotation, joint 에 대한 값을 수신하는 메시지
+  * @param data position, rotation, joint 에 대한 json 문자열 
+  */
+  socket.on('joint_state', (data) => {
+    io.to(web_client_id).emit('joint_state', data)
+  });
+
+  /**
+  * @brief 웹 클라이언트로부터 Waypoint 이동 명령에 대한 요청을 수신하는 메시지
+  * @param map autowalk 파일 이름 
+  * @param id 이동할 waypoint의 이름
+  */
+  socket.on('waypoint_id', (map , id) => {
+    autowalk_map = map
+    console.log('autowalk_map : ' , autowalk_map)
+    io.to(spot_control_client_id).emit('go_to_waypoint', autowalk_map, id)
+  });
+
+  /**
+  * @brief Waypoint 이동 명령에 대한 결과를 수신하는 메시지
+  * @param data Waypoint 이동에 대한 결과 메시지
+  */
+  socket.on('go_to_response', (data) => {
+    io.to(web_client_id).emit('go_to_response', data)
+  });
+
+  /**
+   * @author : Chulhee Lee
+   * @brief : All commands for spot cam operation received from robot web client
+   * @param : object (spot cam command parameter)
+  */
+  socket.on('spot_cam_control', function(data)
+  {
+    io.to(spot_control_client_id).emit('spot_cam_control', data)
+  });
+
+  /**
+   * @author : Chulhee Lee
+   * @brief : Transmits image name property data received from the robot client to the robot web client
+   * @param : list (spot cam image name property data)
+  */
+  socket.on('spot_cam_data_receive_uuid_list', (data) => {
+    io.to(web_client_id).emit('spot_cam_data_receive_uuid_list', data);
+  });
+
+  /**
+   * @author : Chulhee Lee
+   * @brief : Transmits the image data received from the robot client to the robot web client
+   * @param : object (byte array of spot cam image data)
+  */
+  socket.on('spot_cam_data_receive_image', (data) => {
+    io.to(web_client_id).emit('spot_cam_data_receive_image', data);
   });
 });
 
+/**
+ * @author : Chulhee Lee
+ * @brief : Eureka Client to register with the Staging Server for Remote deployment products
+*/
 server.listen(port, () => {
   
   //Eureka client
